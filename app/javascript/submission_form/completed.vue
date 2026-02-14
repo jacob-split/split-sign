@@ -66,12 +66,12 @@
       <a
         v-if="isDemo"
         target="_blank"
-        href="https://github.com/docusealco/docuseal"
+        href="https://split-llc.com"
         class="white-button flex items-center space-x-1 w-full"
       >
         <IconBrandGithub />
         <span>
-          Star on Github
+          Split Sign
         </span>
       </a>
       <a
@@ -94,7 +94,7 @@
         href="https://split-llc.com/start"
         target="_blank"
         class="underline"
-      >DocuSeal</a> - {{ t('open_source_documents_software') }}
+      >Split Sign</a> - {{ t('open_source_documents_software') }}
     </div>
   </div>
 </template>

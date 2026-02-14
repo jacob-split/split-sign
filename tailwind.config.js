@@ -5,16 +5,16 @@ module.exports = {
   daisyui: {
     themes: [
       {
-        docuseal: {
+        split: {
           'color-scheme': 'light',
-          primary: '#000000',
-          secondary: '#333333',
-          accent: '#000000',
-          neutral: '#000000',
+          primary: '#111111',
+          secondary: '#222222',
+          accent: '#d97757',
+          neutral: '#111111',
           'base-100': '#ffffff',
-          'base-200': '#f8f9fa',
-          'base-300': '#e9ecef',
-          'base-content': '#000000',
+          'base-200': '#F5F5F5',
+          'base-300': '#E5E5E5',
+          'base-content': '#111111',
           '--rounded-btn': '4px',
           '--tab-border': '1px',
           '--tab-radius': '4px'
