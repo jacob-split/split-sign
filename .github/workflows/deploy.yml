@@ -1,0 +1,31 @@
+name: Deploy Split Sign
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Oracle VM
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VM_HOST }}
+          username: jacob
+          key: ${{ secrets.VM_SSH_KEY }}
+          script: |
+            cd /opt/split-sign
+            git pull origin main
+
+            # Rebuild and restart Docker container
+            docker build -t split-sign .
+            docker stop split-sign 2>/dev/null || true
+            docker rm split-sign 2>/dev/null || true
+            docker run -d \
+              --name split-sign \
+              --restart unless-stopped \
+              -p 3000:3000 \
+              -v /opt/docuseal_data/docuseal:/data/docuseal \
+              --env-file /opt/docuseal_data/docuseal/docuseal.env \
+              split-sign
