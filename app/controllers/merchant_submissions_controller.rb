@@ -135,8 +135,7 @@ class MerchantSubmissionsController < ApplicationController
         template_name: template.name,
         submission_id: submitter.submission_id,
         submitter_slug: submitter.slug,
-        embed_src: "#{Docuseal::CONSOLE_URL}/s/#{submitter.slug}",
-        status: 'sent'
+        embed_src: "#{Docuseal::CONSOLE_URL}/s/#{submitter.slug}"
       })
 
       SupabaseClient.update_merchant(merchant_id, { onboarding_status: 'awaiting_signature' })
