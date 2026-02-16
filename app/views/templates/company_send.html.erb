@@ -1,0 +1,98 @@
+<% if @principals.blank? %>
+  <div class="max-w-xl mx-auto px-4 py-12">
+    <div class="flex items-center gap-3 mb-6">
+      <%= link_to template_path(@template), class: 'btn btn-ghost btn-sm' do %>
+        <%= svg_icon('arrow_left', class: 'w-5 h-5') %>
+        Back
+      <% end %>
+      <h1 class="text-2xl font-bold">Send "<%= @template.name %>"</h1>
+    </div>
+    <p class="opacity-60">No principals selected. Please go back and select at least one principal.</p>
+  </div>
+<% else %>
+  <div class="sticky top-0 z-30 bg-primary/10 border-b border-primary/20 px-4 py-2">
+    <div class="max-w-[1600px] mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="font-semibold"><%= @principal_names.join(' & ') %></span>
+        <span class="text-sm opacity-60"><%= @principal_emails.join(', ') %></span>
+        <a href="<%= new_template_submission_path(@template) %>" class="btn btn-ghost btn-xs">Change</a>
+      </div>
+      <form action="<%= company_submissions_path %>" method="post" id="company-send-form">
+        <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>" />
+        <input type="hidden" name="template_id" value="<%= @template.id %>" />
+        <% @principal_ids.each do |pid| %>
+          <input type="hidden" name="principal_ids[]" value="<%= pid %>" />
+        <% end %>
+        <% @data_paths.each do |field_name, data_path| %>
+          <input type="hidden" name="data_paths[<%= field_name %>]" value="<%= data_path %>" />
+        <% end %>
+        <div id="company-field-values-container">
+          <% @field_values.each do |field_name, value| %>
+            <input type="hidden" name="field_values[<%= field_name %>]" value="<%= value %>" data-field-name="<%= field_name %>" />
+          <% end %>
+        </div>
+        <div class="flex items-center gap-3">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" name="send_email" value="1" checked class="checkbox checkbox-sm" />
+            <span class="text-sm">Send email</span>
+          </label>
+          <button type="submit" class="btn btn-primary btn-sm" onclick="collectCompanyFieldValues(event)">
+            Send for Signature
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <template-builder
+    class="grid"
+    data-template="<%= @template_data %>"
+    data-autosave="false"
+    data-with-save-button="false"
+    data-with-send-button="false"
+    data-with-sign-yourself-button="false"
+    data-with-fields-detection="false"
+    data-default-fields="<%= MerchantFieldMapper.portal_fields_for_builder.to_json %>"
+    data-locale="<%= I18n.locale %>"
+  ></template-builder>
+
+  <script>
+    function collectCompanyFieldValues(event) {
+      event.preventDefault();
+
+      var container = document.getElementById('company-field-values-container');
+      var fieldValues = {};
+
+      container.querySelectorAll('input[data-field-name]').forEach(function(input) {
+        fieldValues[input.getAttribute('data-field-name')] = input.value;
+      });
+
+      try {
+        var builderEl = document.querySelector('template-builder');
+        if (builderEl && builderEl.component) {
+          var fields = builderEl.component.template.fields || [];
+          fields.forEach(function(f) {
+            if (f.name) {
+              if (f.default_value != null && f.default_value !== '') {
+                fieldValues[f.name] = f.default_value;
+              }
+            }
+          });
+        }
+      } catch(e) {
+        console.warn('[CompanySend] Could not read builder fields:', e);
+      }
+
+      container.innerHTML = '';
+      Object.keys(fieldValues).forEach(function(name) {
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'field_values[' + name + ']';
+        input.value = String(fieldValues[name]);
+        container.appendChild(input);
+      });
+
+      document.getElementById('company-send-form').submit();
+    }
+  </script>
+<% end %>

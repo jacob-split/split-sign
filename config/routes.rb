@@ -74,6 +74,11 @@ Rails.application.routes.draw do
       post :preview
     end
   end
+  resources :company_submissions, only: %i[create] do
+    collection do
+      get :list_principals
+    end
+  end
   resources :dashboard, only: %i[index]
   resources :setup, only: %i[index create]
   resource :newsletter, only: %i[show update]
@@ -112,6 +117,7 @@ Rails.application.routes.draw do
   resources :templates, only: %i[new create edit update show destroy] do
     member do
       get :merchant_send
+      get :company_send
     end
     resources :clone, only: %i[new create], controller: 'templates_clone'
     resource :debug, only: %i[show], controller: 'templates_debug' if Rails.env.development?
@@ -203,6 +209,7 @@ Rails.application.routes.draw do
     resources :integration_users, only: %i[index], path: 'users/:status', controller: 'users',
                                   defaults: { status: :integration }
     resource :personalization, only: %i[show create], controller: 'personalization_settings'
+    resource :company, only: %i[show update], controller: 'company_settings'
     resources :webhooks, only: %i[index show new create update destroy], controller: 'webhook_settings' do
       post :resend
 

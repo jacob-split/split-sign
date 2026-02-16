@@ -44,6 +44,11 @@
           <%= link_to t('personalization'), settings_personalization_path, class: 'text-base hover:bg-base-300' %>
         </li>
       <% end %>
+      <% if can?(:manage, EncryptedConfig) %>
+        <li>
+          <%= link_to 'Company', settings_company_path, class: 'text-base hover:bg-base-300' %>
+        </li>
+      <% end %>
       <% if can?(:read, User) %>
         <li>
           <%= link_to t('users'), settings_users_path, class: 'text-base hover:bg-base-300' %>

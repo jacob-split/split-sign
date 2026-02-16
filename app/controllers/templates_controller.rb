@@ -121,6 +121,53 @@ class TemplatesController < ApplicationController
     render layout: 'plain'
   end
 
+  def company_send
+    ActiveRecord::Associations::Preloader.new(
+      records: [@template],
+      associations: [schema_documents: [:blob, { preview_images_attachments: :blob }]]
+    ).call
+
+    @template_data =
+      @template.as_json.merge(
+        documents: @template.schema_documents.as_json(
+          methods: %i[metadata signed_uuid],
+          include: { preview_images: { methods: %i[url metadata filename] } }
+        )
+      ).to_json
+
+    principal_ids = Array(params[:principal_ids])
+    company_info = current_account.encrypted_configs
+                                  .find_by(key: EncryptedConfig::COMPANY_INFO_KEY)&.value || {}
+    all_principals = current_account.encrypted_configs
+                                    .find_by(key: EncryptedConfig::COMPANY_PRINCIPALS_KEY)&.value || []
+
+    @principals = principal_ids.filter_map { |id| all_principals.find { |p| p['id'] == id } }
+
+    if @principals.any?
+      # Use first principal for field mapping (same pattern as merchant_send)
+      principal = @principals.first
+      template_fields = @template.fields.map { |f| { 'name' => f['name'], 'type' => f['type'] } }
+
+      result = MerchantFieldMapper.build_auto_field_map(company_info, principal, template_fields)
+
+      template_json = JSON.parse(@template_data)
+      template_json['fields'].each do |field|
+        value = result[:values][field['name']]
+        field['default_value'] = value if value.present?
+      end
+      @template_data = template_json.to_json
+
+      @company_info = company_info
+      @principal_ids = principal_ids
+      @principal_names = @principals.map { |p| "#{p['first_name']} #{p['last_name']}".strip }
+      @principal_emails = @principals.map { |p| p['email'] }
+      @data_paths = result[:data_paths]
+      @field_values = result[:values].select { |_k, v| v.present? }
+    end
+
+    render layout: 'plain'
+  end
+
   def destroy
     notice =
       if params[:permanently].in?(['true', true])

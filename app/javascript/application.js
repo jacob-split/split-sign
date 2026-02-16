@@ -55,6 +55,7 @@ import BarChart from './elements/bar_chart'
 import FieldCondition from './elements/field_condition'
 import MerchantSubmission from './elements/merchant_submission'
 import MerchantSearch from './elements/merchant_search'
+import CompanyPrincipalSelect from './elements/company_principal_select'
 
 import * as TurboInstantClick from './lib/turbo_instant_click'
 
@@ -148,6 +149,7 @@ safeRegisterElement('bar-chart', BarChart)
 safeRegisterElement('field-condition', FieldCondition)
 safeRegisterElement('merchant-submission', MerchantSubmission)
 safeRegisterElement('merchant-search', MerchantSearch)
+safeRegisterElement('company-principal-select', CompanyPrincipalSelect)
 
 safeRegisterElement('template-builder', class extends HTMLElement {
   connectedCallback () {
