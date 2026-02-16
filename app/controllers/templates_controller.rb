@@ -105,10 +105,7 @@ class TemplatesController < ApplicationController
       template_json = JSON.parse(@template_data)
       template_json['fields'].each do |field|
         value = result[:values][field['name']]
-        if value.present?
-          field['default_value'] = value
-          field['merchant_mapped'] = true
-        end
+        field['default_value'] = value if value.present?
       end
       @template_data = template_json.to_json
 
