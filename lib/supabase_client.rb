@@ -44,10 +44,12 @@ module SupabaseClient
   end
 
   def fetch_template_field_mappings(template_id)
-    get('/rest/v1/template_field_mappings', {
+    rows = get('/rest/v1/template_field_mappings', {
       'template_id' => "eq.#{template_id}",
-      'select' => 'field_name,data_path,is_auto_mapped'
+      'select' => 'mappings,agent_only_fields'
     })
+
+    rows.first
   end
 
   def insert_merchant_document(attrs)
@@ -62,22 +64,29 @@ module SupabaseClient
     patch('/rest/v1/merchant_documents', attrs, { 'submission_id' => "eq.#{submission_id}" })
   end
 
-  def upsert_template_field_mappings(template_id, mappings)
-    # Delete existing mappings for this template, then insert new ones
-    delete('/rest/v1/template_field_mappings', { 'template_id' => "eq.#{template_id}" })
-
-    return if mappings.empty?
-
-    rows = mappings.map do |field_name, data_path|
-      {
-        template_id: template_id,
-        field_name: field_name,
-        data_path: data_path,
-        is_auto_mapped: false
-      }
+  def upsert_template_field_mappings(template_id, data_paths, agent_only_fields = [], template_name: nil)
+    mappings_json = data_paths.map do |field_name, data_path|
+      { fieldName: field_name, dataPath: data_path, isAutoMapped: false }
     end
 
-    post('/rest/v1/template_field_mappings', rows)
+    existing = get('/rest/v1/template_field_mappings', {
+      'template_id' => "eq.#{template_id}",
+      'select' => 'id'
+    })
+
+    if existing.any?
+      patch('/rest/v1/template_field_mappings', {
+        mappings: mappings_json,
+        agent_only_fields: agent_only_fields
+      }, { 'template_id' => "eq.#{template_id}" })
+    else
+      post('/rest/v1/template_field_mappings', {
+        template_id: template_id,
+        template_name: template_name || "Template #{template_id}",
+        mappings: mappings_json,
+        agent_only_fields: agent_only_fields
+      })
+    end
   end
 
   def fetch_merchant_documents(merchant_id)

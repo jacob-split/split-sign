@@ -313,21 +313,18 @@ module MerchantFieldMapper
   # Returns { values:, agent_only_fields:, data_paths:, source: }
   # ────────────────────────────────────────────────────────
 
-  def get_field_map_for_template(template_id, merchant, principal, template_fields, saved_mappings = nil)
+  def get_field_map_for_template(template_id, merchant, principal, template_fields, saved_record = nil)
     # 1. Saved mappings (from template_field_mappings table in Supabase)
-    if saved_mappings.present?
+    # saved_record is a single hash: { "mappings" => [...], "agent_only_fields" => [...] }
+    if saved_record.present? && saved_record['mappings'].present?
       values = {}
-      agent_only_fields = []
+      agent_only_fields = saved_record['agent_only_fields'] || []
       data_paths = {}
 
-      saved_mappings.each do |mapping|
-        field_name = mapping['field_name']
-        data_path = mapping['data_path']
-
-        if data_path == 'agent_only'
-          agent_only_fields << field_name
-          next
-        end
+      saved_record['mappings'].each do |mapping|
+        field_name = mapping['fieldName']
+        data_path = mapping['dataPath']
+        next if field_name.blank? || data_path.blank?
 
         resolved = resolve_data_path(data_path, merchant, principal)
         values[field_name] = resolved if resolved.present?

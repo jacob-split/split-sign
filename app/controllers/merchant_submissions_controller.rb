@@ -118,7 +118,7 @@ class MerchantSubmissionsController < ApplicationController
       SupabaseClient.update_merchant(merchant_id, { onboarding_status: 'awaiting_signature' })
 
       # Save field mappings for this template (so next send auto-fills the same way)
-      save_field_mappings(template.id, data_paths, agent_only_fields) if data_paths.present?
+      save_field_mappings(template, data_paths, agent_only_fields) if data_paths.present?
     end
 
     redirect_to template_path(template), notice: "Sent to #{merchant_name} for signature"
@@ -132,12 +132,8 @@ class MerchantSubmissionsController < ApplicationController
 
   private
 
-  def save_field_mappings(template_id, data_paths, agent_only_fields)
-    # Merge agent-only fields into the data_paths hash
-    mappings = data_paths.dup
-    agent_only_fields.each { |f| mappings[f] = 'agent_only' }
-
-    SupabaseClient.upsert_template_field_mappings(template_id, mappings)
+  def save_field_mappings(template, data_paths, agent_only_fields)
+    SupabaseClient.upsert_template_field_mappings(template.id, data_paths, agent_only_fields, template_name: template.name)
   rescue SupabaseClient::Error => e
     Rails.logger.warn("[MerchantSubmissions] Failed to save field mappings: #{e.message}")
   end
