@@ -1,10 +1,3 @@
-<p>
-  ---
-</p>
-<p>
-  <% if @current_account&.testing? %>
-    <%= t('sent_using_product_name_in_testing_mode_html', product_url: "#{Docuseal::PRODUCT_EMAIL_URL}/start", product_name: Docuseal.product_name) %>
-  <% else %>
-    <%= t('sent_using_product_name_free_document_signing_html', product_url: "#{Docuseal::PRODUCT_EMAIL_URL}/start", product_name: Docuseal.product_name) %>
-  <% end %>
+<p style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; font-size: 12px; color: #999999; margin: 0;">
+  <a href="https://split-llc.com" style="color: #999999; text-decoration: none;">Split Signature</a> by Split LLC
 </p>

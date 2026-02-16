@@ -1,1 +1,11 @@
-<%= render 'submissions/bulk_send_placeholder' %>
+<div class="alert">
+  <%= svg_icon('info_circle', class: 'w-6 h-6') %>
+  <div>
+    <p class="font-bold">
+      <%= t('bulk_send_from_excel_xlsx_or_csv') %>
+    </p>
+    <p class="text-gray-700">
+      Bulk send is not available in this installation. Use the API to send documents to multiple recipients programmatically.
+    </p>
+  </div>
+</div>

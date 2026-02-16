@@ -2,7 +2,17 @@
   <%= render 'shared/settings_nav' %>
   <div class="flex-grow max-w-xl mx-auto">
     <h1 class="text-4xl font-bold mb-4">SMS</h1>
-    <%= render 'placeholder' %>
+    <div class="alert">
+      <%= svg_icon('info_circle', class: 'w-6 h-6') %>
+      <div>
+        <p class="font-bold">
+          <%= t('send_signature_requests_via_sms') %>
+        </p>
+        <p class="text-gray-700">
+          Configure your Twilio credentials in Settings &gt; SMS to enable SMS signature requests.
+        </p>
+      </div>
+    </div>
   </div>
   <div class="w-0 md:w-52"></div>
 </div>
