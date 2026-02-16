@@ -45,7 +45,7 @@ company_principals = [
   {
     'id' => 'blake',
     'first_name' => 'Blake',
-    'last_name' => 'Schulte',
+    'last_name' => 'Craighead',
     'title' => 'Managing Member',
     'ownership_pct' => 50,
     'email' => 'blake@split-llc.com',

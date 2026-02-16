@@ -16,6 +16,9 @@
         <span class="font-semibold"><%= @principal_names.join(' & ') %></span>
         <span class="text-sm opacity-60"><%= @principal_emails.join(', ') %></span>
         <a href="<%= new_template_submission_path(@template) %>" class="btn btn-ghost btn-xs">Change</a>
+        <button type="button" class="btn btn-ghost btn-xs" onclick="document.getElementById('mapping-panel').classList.toggle('hidden')">
+          <%= @mapping_source == :saved ? 'Mappings (saved)' : 'Mappings (auto)' %>
+        </button>
       </div>
       <form action="<%= company_submissions_path %>" method="post" id="company-send-form">
         <input type="hidden" name="authenticity_token" value="<%= form_authenticity_token %>" />
@@ -41,6 +44,47 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <div id="mapping-panel" class="hidden border-b border-base-300 bg-base-200 px-4 py-3">
+    <div class="max-w-[1600px] mx-auto">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="font-semibold text-sm">
+          Field Mappings
+          <% if @mapping_source == :saved %>
+            <span class="badge badge-sm badge-success ml-1">Saved</span>
+          <% else %>
+            <span class="badge badge-sm badge-warning ml-1">Auto-detected</span>
+          <% end %>
+        </h3>
+        <span class="text-xs opacity-50"><%= @data_paths.size %> fields mapped</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="table table-xs table-zebra w-full">
+          <thead>
+            <tr>
+              <th class="text-xs">Template Field</th>
+              <th class="text-xs">Source</th>
+              <th class="text-xs">Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @data_paths.sort_by { |name, _| name }.each do |field_name, data_path| %>
+              <tr>
+                <td class="font-medium text-xs"><%= field_name %></td>
+                <td class="text-xs opacity-70"><code class="text-[11px]"><%= data_path %></code></td>
+                <td class="text-xs"><%= @field_values[field_name].to_s.truncate(60) %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+      <% if @mapping_source == :auto %>
+        <p class="text-xs opacity-50 mt-2">These mappings were auto-detected via fuzzy matching. Review the values above, then send to lock them in for future use with this template.</p>
+      <% else %>
+        <p class="text-xs opacity-50 mt-2">Using saved mappings from a previous send. Edit values in the builder if needed.</p>
+      <% end %>
     </div>
   </div>
 

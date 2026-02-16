@@ -63,6 +63,9 @@ class CompanySubmissionsController < ApplicationController
       end
     end
 
+    # Save field mappings for this template so subsequent sends use verified mappings
+    save_company_field_mappings(template, data_paths) if data_paths.present?
+
     principal_names = principals.map { |p| "#{p['first_name']} #{p['last_name']}".strip }.join(' & ')
     redirect_to template_path(template), notice: "Sent to #{principal_names} for signature"
   rescue Submissions::CreateFromSubmitters::BaseError => e
@@ -107,13 +110,16 @@ class CompanySubmissionsController < ApplicationController
 
   def build_multi_signer_attrs(template, principals, company_info, fields_by_name, submitter_roles)
     template_fields = template.fields.map { |f| { 'name' => f['name'], 'type' => f['type'] } }
+    saved_mappings = load_company_field_mappings(template.id)
 
     submitters = []
     principals.each_with_index do |principal, idx|
       role = submitter_roles[idx] || submitter_roles.last
 
-      # Run field mapping for each principal
-      result = MerchantFieldMapper.build_auto_field_map(company_info, principal, template_fields)
+      # Run field mapping for each principal, using saved mappings if available
+      result = MerchantFieldMapper.get_field_map_for_template(
+        template.id, company_info, principal, template_fields, saved_mappings
+      )
 
       # Build fields array
       fields = result[:values].map do |field_name, value|
@@ -157,5 +163,23 @@ class CompanySubmissionsController < ApplicationController
   def load_principals
     current_account.encrypted_configs
                    .find_by(key: EncryptedConfig::COMPANY_PRINCIPALS_KEY)&.value || []
+  end
+
+  def load_company_field_mappings(template_id)
+    key = "company_field_mappings_#{template_id}"
+    current_account.encrypted_configs.find_by(key: key)&.value
+  end
+
+  def save_company_field_mappings(template, data_paths)
+    key = "company_field_mappings_#{template.id}"
+    mappings_json = data_paths.map do |field_name, data_path|
+      { 'fieldName' => field_name, 'dataPath' => data_path }
+    end
+
+    config = current_account.encrypted_configs.find_or_initialize_by(key: key)
+    config.value = { 'mappings' => mappings_json, 'agent_only_fields' => [] }
+    config.save!
+  rescue StandardError => e
+    Rails.logger.warn("[CompanySubmissions] Failed to save field mappings: #{e.message}")
   end
 end

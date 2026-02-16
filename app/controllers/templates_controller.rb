@@ -144,11 +144,15 @@ class TemplatesController < ApplicationController
     @principals = principal_ids.filter_map { |id| all_principals.find { |p| p['id'] == id } }
 
     if @principals.any?
-      # Use first principal for field mapping (same pattern as merchant_send)
       principal = @principals.first
       template_fields = @template.fields.map { |f| { 'name' => f['name'], 'type' => f['type'] } }
 
-      result = MerchantFieldMapper.build_auto_field_map(company_info, principal, template_fields)
+      # Load saved mappings for this template (same pattern as merchant_send)
+      saved_mappings = load_company_field_mappings(@template.id)
+
+      result = MerchantFieldMapper.get_field_map_for_template(
+        @template.id, company_info, principal, template_fields, saved_mappings
+      )
 
       template_json = JSON.parse(@template_data)
       template_json['fields'].each do |field|
@@ -163,6 +167,7 @@ class TemplatesController < ApplicationController
       @principal_emails = @principals.map { |p| p['email'] }
       @data_paths = result[:data_paths]
       @field_values = result[:values].select { |_k, v| v.present? }
+      @mapping_source = result[:source] # :saved or :auto
     end
 
     render layout: 'plain'
@@ -201,5 +206,10 @@ class TemplatesController < ApplicationController
                     validation: %i[message pattern min max step],
                     areas: [%i[x y w h cell_w attachment_uuid option_uuid page]] }]] }
     )
+  end
+
+  def load_company_field_mappings(template_id)
+    key = "company_field_mappings_#{template_id}"
+    current_account.encrypted_configs.find_by(key: key)&.value
   end
 end
