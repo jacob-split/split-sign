@@ -106,7 +106,7 @@ class MerchantSubmissionsController < ApplicationController
         values: submitter_values,
         readonly_fields: agent_only_fields,
         metadata: { 'merchant_id' => merchant_id }
-      }]
+      }.with_indifferent_access]
     }]
 
     submissions = Submissions.create_from_submitters(
