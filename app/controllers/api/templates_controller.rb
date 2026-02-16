@@ -2,7 +2,7 @@
 
 module Api
   class TemplatesController < ApiBaseController
-    load_and_authorize_resource :template
+    load_and_authorize_resource :template, except: [:create]
 
     def index
       templates = filter_templates(@templates, params)
@@ -43,6 +43,59 @@ module Api
 
     def show
       render json: Templates::SerializeForApi.call(@template)
+    end
+
+    def create
+      @template = Template.new
+      @template.account = current_account
+      @template.author = current_user
+      @template.source = 'api'
+      @template.name = params[:name].presence || 'Untitled'
+      @template.external_id = params[:external_id] if params[:external_id].present?
+      @template.shared_link = params[:shared_link] if params.key?(:shared_link)
+      @template.folder = TemplateFolders.find_or_create_by_name(current_user, params[:folder_name])
+
+      authorize!(:create, @template)
+
+      Templates.maybe_assign_access(@template)
+
+      @template.save!
+
+      documents = Array.wrap(params[:documents]).map do |doc_params|
+        file = build_file_from_params(doc_params)
+        Templates::CreateAttachments.handle_pdf_or_image(@template, file, nil, params, extract_fields: true)
+      end.flatten
+
+      schema = documents.map { |doc| { attachment_uuid: doc.uuid, name: doc.filename.base } }
+
+      if @template.fields.blank?
+        @template.fields = Templates::ProcessDocument.normalize_attachment_fields(@template, documents)
+
+        schema.each { |item| item['pending_fields'] = true } if @template.fields.present?
+      end
+
+      build_fields_from_params(documents) if params[:documents]&.any? { |d| d[:fields].present? }
+
+      @template.update!(schema:)
+
+      if params[:flatten].in?([true, 'true'])
+        @template.preferences['flatten'] = true
+        @template.save!
+      end
+
+      if params[:remove_tags].in?([false, 'false'])
+        @template.preferences['remove_tags'] = false
+        @template.save!
+      end
+
+      WebhookUrls.enqueue_events(@template, 'template.created')
+      SearchEntries.enqueue_reindex(@template)
+
+      render json: Templates::SerializeForApi.call(@template)
+    rescue Templates::CreateAttachments::PdfEncrypted
+      render json: { error: 'PDF is encrypted' }, status: :unprocessable_content
+    rescue DownloadUtils::UnableToDownload => e
+      render json: { error: e.message }, status: :unprocessable_content
     end
 
     def update
@@ -99,6 +152,106 @@ module Api
       end
 
       templates
+    end
+
+    def build_file_from_params(doc_params)
+      file_data = doc_params[:file]
+      filename = doc_params[:name].presence || 'document.pdf'
+
+      if file_data.blank?
+        raise ActionController::ParameterMissing, 'documents[][file] is required'
+      end
+
+      if file_data.start_with?('http://') || file_data.start_with?('https://')
+        resp = DownloadUtils.call(file_data)
+        tempfile = Tempfile.new(filename)
+        tempfile.binmode
+        tempfile.write(resp.body)
+        tempfile.rewind
+
+        ActionDispatch::Http::UploadedFile.new(
+          tempfile:,
+          filename:,
+          type: Marcel::MimeType.for(tempfile, name: filename)
+        )
+      else
+        decoded = Base64.decode64(file_data)
+        tempfile = Tempfile.new(filename)
+        tempfile.binmode
+        tempfile.write(decoded)
+        tempfile.rewind
+
+        ActionDispatch::Http::UploadedFile.new(
+          tempfile:,
+          filename:,
+          type: Marcel::MimeType.for(tempfile, name: filename)
+        )
+      end
+    end
+
+    def build_fields_from_params(documents)
+      fields = []
+      submitter_uuid = @template.submitters.first['uuid']
+
+      Array.wrap(params[:documents]).each_with_index do |doc_params, doc_index|
+        next if doc_params[:fields].blank?
+
+        attachment = documents[doc_index]
+        next unless attachment
+
+        doc_params[:fields].each do |field_params|
+          role = field_params[:role]
+          sub_uuid = if role.present?
+                       sub = @template.submitters.find { |s| s['name'] == role }
+                       unless sub
+                         sub = { 'name' => role, 'uuid' => SecureRandom.uuid }
+                         @template.submitters << sub
+                       end
+                       sub['uuid']
+                     else
+                       submitter_uuid
+                     end
+
+          field = {
+            'uuid' => SecureRandom.uuid,
+            'submitter_uuid' => sub_uuid,
+            'name' => field_params[:name] || field_params[:type]&.capitalize || 'Field',
+            'type' => field_params[:type] || 'text',
+            'required' => field_params[:required].in?([true, 'true', nil]),
+            'preferences' => (field_params[:preferences] || {}).to_unsafe_h.stringify_keys
+          }
+
+          field['title'] = field_params[:title] if field_params[:title].present?
+          field['description'] = field_params[:description] if field_params[:description].present?
+
+          if field_params[:validation].present?
+            field['validation'] = field_params[:validation].to_unsafe_h.stringify_keys
+          end
+
+          if field_params[:options].present?
+            field['options'] = Array.wrap(field_params[:options]).map do |opt|
+              opt.is_a?(String) ? { 'value' => opt, 'uuid' => SecureRandom.uuid } : opt.to_unsafe_h.stringify_keys
+            end
+          end
+
+          if field_params[:areas].present?
+            field['areas'] = Array.wrap(field_params[:areas]).map do |area_params|
+              {
+                'x' => area_params[:x].to_f,
+                'y' => area_params[:y].to_f,
+                'w' => area_params[:w].to_f,
+                'h' => area_params[:h].to_f,
+                'page' => area_params[:page].to_i - 1,
+                'attachment_uuid' => attachment.uuid
+              }.compact
+            end
+          end
+
+          fields << field
+        end
+      end
+
+      @template.fields = fields if fields.present?
     end
 
     def template_params
