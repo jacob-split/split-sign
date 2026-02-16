@@ -45,11 +45,10 @@ export default class extends HTMLElement {
       const resp = await fetch(this.dataset.searchUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'X-CSRF-Token': this.csrfToken,
           Accept: 'application/json'
         },
-        body: JSON.stringify({ query })
+        body: new URLSearchParams({ query })
       })
 
       const merchants = await resp.json()
@@ -136,11 +135,10 @@ export default class extends HTMLElement {
       const resp = await fetch(this.dataset.previewUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'X-CSRF-Token': this.csrfToken,
           Accept: 'application/json'
         },
-        body: JSON.stringify({
+        body: new URLSearchParams({
           merchant_id: this.merchantId,
           template_id: templateId
         })
