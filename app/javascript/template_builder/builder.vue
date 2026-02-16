@@ -1083,6 +1083,18 @@ export default {
         this.pendingFieldAttachmentUuids.push(item.attachment_uuid)
       }
     })
+
+    if (this.$el) {
+      this.$el.getFieldValues = () => {
+        const values = {}
+
+        this.template.fields.forEach((f) => {
+          if (f.default_value && f.name) values[f.name] = f.default_value
+        })
+
+        return values
+      }
+    }
   },
   unmounted () {
     document.removeEventListener('keyup', this.onKeyUp)

@@ -147,9 +147,11 @@ module Templates
           field = node.elem
 
           type = regexp_type ? type_from_page_node(node) : field.type
+          name = name_from_adjacent_text(node) || ''
 
           {
             uuid: SecureRandom.uuid,
+            name:,
             type:,
             required: type == 'signature',
             preferences: {},
@@ -214,6 +216,29 @@ module Templates
       return 'number' if string.match?(NUMBER_REGEXP)
 
       return 'text'
+    end
+
+    def name_from_adjacent_text(node)
+      return nil unless node.prev&.elem.is_a?(String)
+
+      text = MerchantFieldMapper.normalize_field_name(node.prev.elem)
+      return nil if text.blank?
+
+      best_score = 0
+      best_name = nil
+
+      MerchantFieldMapper::CANONICAL_FIELD_MAP.each do |search_terms, _data_path, _accessor|
+        search_terms.each do |term|
+          score = MerchantFieldMapper.match_score(text, term)
+
+          if score > best_score
+            best_score = score
+            best_name = search_terms.first.split(' ').map(&:capitalize).join(' ')
+          end
+        end
+      end
+
+      best_score >= 0.5 ? best_name : nil
     end
 
     def build_page_nodes(page, fields, tail_node, attachment_uuid: nil)

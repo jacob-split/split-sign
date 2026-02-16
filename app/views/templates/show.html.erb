@@ -18,7 +18,7 @@
           <span><%= t('export') %></span>
         <% end %>
         <% if !@template.archived_at? && can?(:create, Submission) %>
-          <%= link_to new_merchant_submission_path(template_id: @template.id), class: 'white-button !border', data: { turbo: false } do %>
+          <%= link_to merchant_send_template_path(@template), class: 'white-button !border', data: { turbo: false } do %>
             <%= svg_icon('send', class: 'w-6 h-6 stroke-2') %>
             <span class="hidden md:inline">Send to Merchant</span>
           <% end %>

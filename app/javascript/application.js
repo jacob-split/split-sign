@@ -54,6 +54,7 @@ import OpenModal from './elements/open_modal'
 import BarChart from './elements/bar_chart'
 import FieldCondition from './elements/field_condition'
 import MerchantSubmission from './elements/merchant_submission'
+import MerchantSearch from './elements/merchant_search'
 
 import * as TurboInstantClick from './lib/turbo_instant_click'
 
@@ -146,6 +147,7 @@ safeRegisterElement('open-modal', OpenModal)
 safeRegisterElement('bar-chart', BarChart)
 safeRegisterElement('field-condition', FieldCondition)
 safeRegisterElement('merchant-submission', MerchantSubmission)
+safeRegisterElement('merchant-search', MerchantSearch)
 
 safeRegisterElement('template-builder', class extends HTMLElement {
   connectedCallback () {
@@ -179,6 +181,7 @@ safeRegisterElement('template-builder', class extends HTMLElement {
       withDownload: true,
       currencies: (this.dataset.currencies || '').split(',').filter(Boolean),
       acceptFileTypes: this.dataset.acceptFileTypes,
+      defaultFields: JSON.parse(this.dataset.defaultFields || '[]'),
       showTourStartForm: this.dataset.showTourStartForm === 'true'
     })
 

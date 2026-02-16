@@ -75,6 +75,51 @@ class TemplatesController < ApplicationController
     head :ok
   end
 
+  def merchant_send
+    ActiveRecord::Associations::Preloader.new(
+      records: [@template],
+      associations: [schema_documents: [:blob, { preview_images_attachments: :blob }]]
+    ).call
+
+    @template_data =
+      @template.as_json.merge(
+        documents: @template.schema_documents.as_json(
+          methods: %i[metadata signed_uuid],
+          include: { preview_images: { methods: %i[url metadata filename] } }
+        )
+      ).to_json
+
+    if params[:merchant_id].present?
+      merchant = SupabaseClient.fetch_merchant(params[:merchant_id])
+      principals = SupabaseClient.fetch_principals(params[:merchant_id])
+      principal = principals&.first || {}
+      MerchantPii.decrypt_merchant(merchant)
+      MerchantPii.decrypt_principal(principal) if principal.present?
+
+      template_fields = @template.fields.map { |f| { 'name' => f['name'], 'type' => f['type'] } }
+      saved_mappings = SupabaseClient.fetch_template_field_mappings(@template.id)
+      result = MerchantFieldMapper.get_field_map_for_template(
+        @template.id, merchant, principal, template_fields, saved_mappings
+      )
+
+      template_json = JSON.parse(@template_data)
+      template_json['fields'].each do |field|
+        value = result[:values][field['name']]
+        field['default_value'] = value if value.present?
+      end
+      @template_data = template_json.to_json
+
+      @merchant = merchant
+      @merchant_id = params[:merchant_id]
+      @merchant_name = merchant['dba_name'].presence || merchant['business_name']
+      @merchant_email = merchant['email']
+      @data_paths = result[:data_paths]
+      @agent_only_fields = result[:agent_only_fields]
+    end
+
+    render layout: 'plain'
+  end
+
   def destroy
     notice =
       if params[:permanently].in?(['true', true])

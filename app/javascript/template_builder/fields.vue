@@ -55,7 +55,7 @@
     <div
       class="overflow-auto relative"
       :style="{
-        maxHeight: isShowFieldSearch ? '210px' : '',
+        maxHeight: isShowFieldSearch ? '400px' : (hasGroupedFields ? '400px' : ''),
         minHeight: isShowFieldSearch ? '210px' : ''
       }"
     >
@@ -74,11 +74,61 @@
           {{ t('clear') }}
         </a>
       </div>
-      <template
-        v-for="field in filteredSubmitterDefaultFields"
-        :key="field.name"
-      >
+      <template v-if="hasGroupedFields">
+        <template
+          v-for="(sectionFields, sectionName) in groupedDefaultFields"
+          :key="sectionName"
+        >
+          <div class="mb-1">
+            <button
+              class="flex items-center gap-1 w-full text-xs font-semibold opacity-60 py-1"
+              @click="toggleSection(sectionName)"
+            >
+              <IconChevronRight
+                :class="collapsedSections[sectionName] ? '' : 'rotate-90'"
+                class="w-3 h-3 transition-transform"
+              />
+              {{ sectionName }}
+            </button>
+            <template v-if="!collapsedSections[sectionName]">
+              <div
+                v-for="field in sectionFields"
+                :key="field.name"
+                :style="{ backgroundColor }"
+                draggable="true"
+                class="border border-base-300 rounded relative group mb-2 default-field fields-list-item"
+                @dragstart="onDragstart($event, field)"
+                @dragend="$emit('drag-end')"
+              >
+                <div class="flex items-center justify-between relative cursor-grab">
+                  <div class="flex items-center p-1 space-x-1">
+                    <IconDrag />
+                    <FieldType
+                      :model-value="field.type || 'text'"
+                      :editable="false"
+                      :button-width="20"
+                    />
+                    <span class="block pl-0.5">
+                      {{ field.title || field.name }}
+                    </span>
+                  </div>
+                  <span
+                    v-if="defaultRequiredFields.includes(field)"
+                    :data-tip="t('required')"
+                    class="text-red-400 text-3xl pr-1.5 tooltip tooltip-left h-8"
+                  >
+                    *
+                  </span>
+                </div>
+              </div>
+            </template>
+          </div>
+        </template>
+      </template>
+      <template v-else>
         <div
+          v-for="field in filteredSubmitterDefaultFields"
+          :key="field.name"
           :style="{ backgroundColor }"
           draggable="true"
           class="border border-base-300 rounded relative group mb-2 default-field fields-list-item"
@@ -359,7 +409,7 @@ import Field from './field'
 import CustomField from './custom_field'
 import FieldType from './field_type'
 import FieldSubmitter from './field_submitter'
-import { IconLock, IconCirclePlus, IconInnerShadowTop, IconSparkles } from '@tabler/icons-vue'
+import { IconLock, IconCirclePlus, IconInnerShadowTop, IconSparkles, IconChevronRight } from '@tabler/icons-vue'
 import IconDrag from './icon_drag'
 import { v4 } from 'uuid'
 
@@ -374,7 +424,8 @@ export default {
     IconInnerShadowTop,
     FieldSubmitter,
     IconDrag,
-    IconLock
+    IconLock,
+    IconChevronRight
   },
   inject: ['save', 'backgroundColor', 'withPhone', 'withVerification', 'withKba', 'withPayment', 't', 'fieldsDragFieldRef', 'customDragFieldRef', 'baseFetch', 'selectedAreasRef', 'getFieldTypeIndex'],
   props: {
@@ -483,7 +534,8 @@ export default {
       newCustomField: null,
       showCustomTab: false,
       defaultFieldsSearch: '',
-      customFieldsSearch: ''
+      customFieldsSearch: '',
+      collapsedSections: {}
     }
   },
   computed: {
@@ -498,7 +550,7 @@ export default {
       if (this.withFieldsSearch === false) {
         return false
       } else {
-        return this.submitterDefaultFields.length > 15
+        return this.submitterDefaultFields.length > 10
       }
     },
     defaultFieldsIndex () {
@@ -537,6 +589,22 @@ export default {
         return this.submitterDefaultFields
       }
     },
+    hasGroupedFields () {
+      return this.filteredSubmitterDefaultFields.some((f) => f.section)
+    },
+    groupedDefaultFields () {
+      const groups = {}
+
+      for (const f of this.filteredSubmitterDefaultFields) {
+        const section = f.section || 'Other'
+
+        if (!groups[section]) groups[section] = []
+
+        groups[section].push(f)
+      }
+
+      return groups
+    },
     isShowCustomFieldSearch () {
       return this.customFields.length > 8
     },
@@ -549,6 +617,16 @@ export default {
     }
   },
   mounted () {
+    if (this.hasGroupedFields) {
+      const sections = {}
+
+      for (const f of this.defaultFields) {
+        if (f.section) sections[f.section] = true
+      }
+
+      this.collapsedSections = sections
+    }
+
     try {
       this.showCustomTab = localStorage.getItem('docuseal_builder_tab') === 'custom'
     } catch (e) {
@@ -556,6 +634,12 @@ export default {
     }
   },
   methods: {
+    toggleSection (sectionName) {
+      this.collapsedSections = {
+        ...this.collapsedSections,
+        [sectionName]: !this.collapsedSections[sectionName]
+      }
+    },
     onDragstart (event, field) {
       this.removeDragOverlay(event)
 

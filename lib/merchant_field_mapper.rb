@@ -3,7 +3,71 @@
 module MerchantFieldMapper
   INTERACTIVE_TYPES = Set.new(%w[signature initials stamp image file]).freeze
 
+  # ────────────────────────────────────────────────────────
+  # Portal Fields — single source of truth for builder sidebar,
+  # auto-detect naming, and merchant data resolution.
+  # ────────────────────────────────────────────────────────
+
+  PORTAL_FIELDS = [
+    # Business Identity
+    { section: 'Business Identity', display_name: 'DBA Name', type: 'text', data_path: 'merchant.dba_name' },
+    { section: 'Business Identity', display_name: 'Legal Business Name', type: 'text', data_path: 'merchant.business_name' },
+    { section: 'Business Identity', display_name: 'EIN / Tax ID', type: 'text', data_path: 'merchant.ein' },
+    { section: 'Business Identity', display_name: 'Business Type', type: 'text', data_path: 'merchant.company_type' },
+    { section: 'Business Identity', display_name: 'Industry / Products', type: 'text', data_path: 'merchant.product_description' },
+    { section: 'Business Identity', display_name: 'Website', type: 'text', data_path: 'merchant.website' },
+
+    # Business Contact
+    { section: 'Business Contact', display_name: 'Business Phone', type: 'text', data_path: 'merchant.phone' },
+    { section: 'Business Contact', display_name: 'Business Email', type: 'text', data_path: 'merchant.email' },
+    { section: 'Business Contact', display_name: 'Business Address', type: 'text', data_path: 'merchant.street' },
+    { section: 'Business Contact', display_name: 'City', type: 'text', data_path: 'merchant.city' },
+    { section: 'Business Contact', display_name: 'State', type: 'text', data_path: 'merchant.state' },
+    { section: 'Business Contact', display_name: 'Zip Code', type: 'text', data_path: 'merchant.zip' },
+    { section: 'Business Contact', display_name: 'City/State/Zip', type: 'text', data_path: 'computed.biz_city_state_zip' },
+
+    # Financial
+    { section: 'Financial', display_name: 'Monthly Volume', type: 'text', data_path: 'computed.monthly_volume_formatted' },
+    { section: 'Financial', display_name: 'Annual Volume', type: 'text', data_path: 'computed.annual_cc_volume' },
+    { section: 'Financial', display_name: 'Average Ticket', type: 'text', data_path: 'computed.average_ticket_formatted' },
+    { section: 'Financial', display_name: 'High Ticket', type: 'text', data_path: 'computed.high_ticket_formatted' },
+    { section: 'Financial', display_name: 'Card Present %', type: 'text', data_path: 'computed.card_present_pct' },
+    { section: 'Financial', display_name: 'E-Commerce %', type: 'text', data_path: 'computed.ecommerce_pct' },
+    { section: 'Financial', display_name: 'MOTO %', type: 'text', data_path: 'computed.moto_pct' },
+    { section: 'Financial', display_name: 'Business Start Date', type: 'date', data_path: 'computed.business_start_date_formatted' },
+    { section: 'Financial', display_name: 'Annual Revenue', type: 'text', data_path: 'computed.annual_revenue_formatted' },
+
+    # Banking
+    { section: 'Banking', display_name: 'Routing Number', type: 'text', data_path: 'merchant.bank_routing_number' },
+    { section: 'Banking', display_name: 'Account Number', type: 'text', data_path: 'merchant.bank_account_number' },
+    { section: 'Banking', display_name: 'Bank Name', type: 'text', data_path: 'merchant.bank_name' },
+
+    # Principal / Owner
+    { section: 'Principal / Owner', display_name: 'Owner Full Name', type: 'text', data_path: 'computed.owner_name' },
+    { section: 'Principal / Owner', display_name: 'First Name', type: 'text', data_path: 'principal.first_name' },
+    { section: 'Principal / Owner', display_name: 'Last Name', type: 'text', data_path: 'principal.last_name' },
+    { section: 'Principal / Owner', display_name: 'Title', type: 'text', data_path: 'computed.title' },
+    { section: 'Principal / Owner', display_name: 'Ownership %', type: 'number', data_path: 'computed.ownership_pct' },
+    { section: 'Principal / Owner', display_name: 'SSN', type: 'text', data_path: 'principal.ssn' },
+    { section: 'Principal / Owner', display_name: 'Date of Birth', type: 'date', data_path: 'computed.dob_formatted' },
+    { section: 'Principal / Owner', display_name: "Driver's License #", type: 'text', data_path: 'principal.drivers_license_number' },
+    { section: 'Principal / Owner', display_name: 'DL State', type: 'text', data_path: 'principal.drivers_license_state' },
+    { section: 'Principal / Owner', display_name: 'Owner Phone', type: 'text', data_path: 'principal.phone' },
+    { section: 'Principal / Owner', display_name: 'Home Address', type: 'text', data_path: 'principal.street' },
+    { section: 'Principal / Owner', display_name: 'Home City', type: 'text', data_path: 'principal.city' },
+    { section: 'Principal / Owner', display_name: 'Home State', type: 'text', data_path: 'principal.state' },
+    { section: 'Principal / Owner', display_name: 'Home Zip', type: 'text', data_path: 'principal.zip' },
+    { section: 'Principal / Owner', display_name: 'Owner City/State/Zip', type: 'text', data_path: 'computed.owner_city_state_zip' }
+  ].freeze
+
   module_function
+
+  def portal_fields_for_builder
+    PORTAL_FIELDS.map do |pf|
+      { name: pf[:display_name], type: pf[:type], title: pf[:display_name],
+        section: pf[:section], preferences: { data_path: pf[:data_path] } }
+    end
+  end
 
   # ────────────────────────────────────────────────────────
   # Helpers
