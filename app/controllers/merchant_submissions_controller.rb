@@ -125,6 +125,9 @@ class MerchantSubmissionsController < ApplicationController
     submitter = submissions.first&.submitters&.first
 
     if submitter
+      # Skip optional fields in the signing form — merchant docs can have hundreds of fields
+      submitter.update!(preferences: submitter.preferences.merge('only_required_fields' => true))
+
       # Write to Supabase merchant_documents
       SupabaseClient.insert_merchant_document({
         merchant_id: merchant_id,
