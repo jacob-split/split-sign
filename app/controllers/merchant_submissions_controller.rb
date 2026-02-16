@@ -13,6 +13,7 @@ class MerchantSubmissionsController < ApplicationController
   end
 
   def search_merchants
+    Rails.logger.info("[MerchantSearch] content_type=#{request.content_type} raw_post=#{request.raw_post.inspect} params_keys=#{params.keys} query=#{params[:query].inspect}")
     merchants = SupabaseClient.fetch_merchants(params[:query])
 
     render json: merchants.map { |m|
