@@ -47,7 +47,13 @@ module Submissions
 
             uuid = find_submitter_uuid(template_submitters, submitter_attrs, index)
 
-            next if uuid.blank?
+            if uuid.blank?
+              role_name = submitter_attrs[:role].presence || "index #{index}"
+              available = template_submitters.pluck('name').join(', ')
+
+              raise BaseError, "Submitter role '#{role_name}' not found in template. Available roles: #{available}"
+            end
+
             next if submitter_attrs.slice('email', 'phone', 'name').compact_blank.blank?
 
             submission.template_fields = submission.template.fields if submitter_attrs[:completed].present? &&

@@ -76,6 +76,14 @@ module Api
 
       build_fields_from_params(documents) if params[:documents]&.any? { |d| d[:fields].present? }
 
+      Array.wrap(params[:roles]).each_with_index do |role, index|
+        if (item = @template.submitters[index])
+          item['name'] = role
+        else
+          @template.submitters << { 'name' => role, 'uuid' => SecureRandom.uuid }
+        end
+      end
+
       @template.update!(schema:)
 
       if params[:flatten].in?([true, 'true'])
@@ -119,7 +127,27 @@ module Api
         @template.archived_at = archived == true ? Time.current : nil
       end
 
-      @template.update!(template_params)
+      update_params = template_params
+
+      incoming_fields = update_params[:fields] || update_params['fields']
+      if incoming_fields.present?
+        merged_fields = @template.fields.deep_dup
+
+        incoming_fields.each do |incoming|
+          incoming = incoming.to_h.stringify_keys
+          existing = merged_fields.find { |f| f['uuid'] == incoming['uuid'] }
+
+          if existing
+            existing.merge!(incoming.compact_blank)
+          else
+            merged_fields << incoming
+          end
+        end
+
+        update_params = update_params.to_h.merge('fields' => merged_fields)
+      end
+
+      @template.update!(update_params)
 
       ensure_submitter_uuids(@template)
 
