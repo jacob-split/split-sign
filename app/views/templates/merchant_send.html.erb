@@ -49,7 +49,8 @@
   <template-builder
     class="grid"
     data-template="<%= @template_data %>"
-    data-editable="false"
+    data-autosave="false"
+    data-with-save-button="false"
     data-with-send-button="false"
     data-with-sign-yourself-button="false"
     data-with-fields-detection="false"
@@ -62,11 +63,15 @@
       event.preventDefault();
 
       var builderEl = document.querySelector('template-builder');
-      var appEl = builderEl && builderEl.querySelector('.md\\:h-screen');
       var fieldValues = {};
 
-      if (appEl && appEl.getFieldValues) {
-        fieldValues = appEl.getFieldValues();
+      if (builderEl && builderEl.component) {
+        var fields = builderEl.component.template.fields || [];
+        fields.forEach(function(f) {
+          if (f.name && f.default_value) {
+            fieldValues[f.name] = f.default_value;
+          }
+        });
       } else {
         try {
           var templateData = JSON.parse(builderEl.getAttribute('data-template'));
