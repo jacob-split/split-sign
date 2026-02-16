@@ -37,12 +37,22 @@ class MerchantSubmissionsController < ApplicationController
     MerchantPii.decrypt_principal(principal) if principal.present?
 
     template = current_account.templates.find(params[:template_id])
+
+    ActiveRecord::Associations::Preloader.new(
+      records: [template],
+      associations: [schema_documents: [:blob, { preview_images_attachments: :blob }]]
+    ).call
+
     template_fields = template.fields.map { |f| { 'name' => f['name'], 'type' => f['type'] } }
     saved_mappings = SupabaseClient.fetch_template_field_mappings(template.id)
 
     result = MerchantFieldMapper.get_field_map_for_template(
       template.id, merchant, principal, template_fields, saved_mappings
     )
+
+    document_pages = template.schema_documents.flat_map do |doc|
+      doc.preview_images.map { |img| { url: img.url, filename: img.filename.to_s } }
+    end
 
     render json: {
       values: result[:values],
@@ -51,6 +61,7 @@ class MerchantSubmissionsController < ApplicationController
       mapping_source: result[:source],
       template_fields: template.fields.reject { |f| MerchantFieldMapper::INTERACTIVE_TYPES.include?(f['type']) }
                                        .map { |f| { 'uuid' => f['uuid'], 'name' => f['name'], 'type' => f['type'] } },
+      document_pages: document_pages,
       merchant_name: merchant['business_name'],
       merchant_email: merchant['email'],
       principal_name: principal.present? ? "#{principal['first_name']} #{principal['last_name']}".strip : nil
