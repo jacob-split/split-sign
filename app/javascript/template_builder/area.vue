@@ -178,8 +178,8 @@
     >
       <span
         v-if="field"
-        class="flex justify-center items-center space-x-1"
-        :class="{ 'w-full': isWFullType, 'h-full': !isValueInput && (!isDefaultValuePresent || field.type === 'strikethrough') }"
+        class="flex justify-center items-center space-x-1 w-full"
+        :class="{ 'h-full': !isValueInput && (!isDefaultValuePresent || field.type === 'strikethrough') }"
       >
         <div
           v-if="field.type === 'strikethrough'"
@@ -311,9 +311,9 @@
         </div>
         <span
           v-else-if="!isCheckboxInput"
-          class="truncate px-1 opacity-60"
+          class="text-center px-0.5 opacity-50 overflow-hidden whitespace-nowrap w-full"
           :style="fontStyle"
-        >{{ field.name || fieldNames[field.type] }}</span>
+        >{{ fieldDisplayName }}</span>
       </span>
     </div>
     <div
@@ -595,6 +595,13 @@ export default {
     },
     defaultName () {
       return this.buildDefaultName(this.field)
+    },
+    fieldDisplayName () {
+      if (this.defaultField) {
+        return this.defaultField.title || this.field.title || this.field.name || this.fieldNames[this.field.type]
+      }
+
+      return this.field.title || this.field.name || this.fieldNames[this.field.type]
     },
     fontClasses () {
       if (!this.field.preferences) {
