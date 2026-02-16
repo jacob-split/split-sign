@@ -309,13 +309,11 @@
             >{{ field.default_value }}</span>
           </div>
         </div>
-        <component
-          :is="fieldIcons[field.type]"
+        <span
           v-else-if="!isCheckboxInput"
-          width="100%"
-          height="100%"
-          class="max-h-10 opacity-50"
-        />
+          class="truncate px-1 opacity-60"
+          :style="fontStyle"
+        >{{ field.name || fieldNames[field.type] }}</span>
       </span>
     </div>
     <div
@@ -518,8 +516,6 @@ export default {
         return 'bg-gray-50'
       } else if (this.field.type === 'strikethrough') {
         return 'bg-transparent'
-      } else if (this.defaultField) {
-        return 'bg-emerald-100'
       } else {
         return this.bgColors[this.submitterIndex % this.bgColors.length]
       }
@@ -529,8 +525,6 @@ export default {
         return ''
       } else if (this.field.type === 'strikethrough') {
         return 'border-dashed border-gray-300'
-      } else if (this.defaultField) {
-        return 'border-emerald-500/80'
       } else {
         return this.borderColors[this.submitterIndex % this.borderColors.length]
       }
