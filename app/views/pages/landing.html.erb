@@ -1,24 +1,7 @@
 <%= content_for(:html_title, 'Split Signature | Professional Document Signing') %>
 
-<%# ===== HERO ===== %>
-<div class="text-center pt-16 pb-20 md:pt-24 md:pb-28">
-  <h1 class="text-4xl md:text-6xl font-bold tracking-tight leading-tight">
-    Document signing,<br class="hidden md:inline"> done right.
-  </h1>
-  <p class="mt-5 text-lg text-gray-500 max-w-lg mx-auto">
-    Send, sign, and manage legally binding documents in minutes.
-    Fast, secure, and built for teams that move quickly.
-  </p>
-  <div class="mt-8">
-    <%= link_to new_user_session_path, class: 'btn btn-neutral text-white px-8' do %>
-      Get Started
-      <%= svg_icon('arrow_right', class: 'w-5 h-5 ml-1') %>
-    <% end %>
-  </div>
-</div>
-
 <%# ===== TRUST SIGNALS ===== %>
-<div class="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 pb-16 text-sm text-gray-400">
+<div class="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 pt-6 pb-4 text-sm text-gray-400">
   <span class="flex items-center gap-1.5">
     <%= svg_icon('shield_check', class: 'w-4 h-4') %>
     Bank-grade encryption
@@ -35,6 +18,23 @@
     <%= svg_icon('clock', class: 'w-4 h-4') %>
     Full audit trail
   </span>
+</div>
+
+<%# ===== HERO ===== %>
+<div class="text-center pt-12 pb-28 md:pt-20 md:pb-36">
+  <h1 class="text-4xl md:text-6xl font-bold tracking-tight leading-tight">
+    Document signing,<br class="hidden md:inline"> done right.
+  </h1>
+  <p class="mt-5 text-lg text-gray-500 max-w-lg mx-auto">
+    Send, sign, and manage legally binding documents in minutes.
+    Fast, secure, and built for teams that move quickly.
+  </p>
+  <div class="mt-8">
+    <%= link_to new_user_session_path, class: 'btn btn-neutral text-white px-8' do %>
+      Get Started
+      <%= svg_icon('arrow_right', class: 'w-5 h-5 ml-1') %>
+    <% end %>
+  </div>
 </div>
 
 <div class="border-t border-base-300"></div>
