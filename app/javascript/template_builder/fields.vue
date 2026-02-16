@@ -13,54 +13,22 @@
       @update:model-value="$emit('change-submitter', submitters.find((s) => s.uuid === $event))"
     />
   </div>
-  <div
-    ref="fields"
-    class="fields mt-2"
-    :class="{ 'mb-1': !withCustomFields || !customFields.length }"
-    @dragover.prevent="onFieldDragover"
-    @drop="fieldsDragFieldRef.value ? reorderFields() : null"
-  >
-    <Field
-      v-for="field in submitterFields"
-      :key="field.uuid"
-      :data-uuid="field.uuid"
-      :field="field"
-      :type-index="getFieldTypeIndex(field)"
-      :editable="editable"
-      :with-signature-id="withSignatureId"
-      :with-prefillable="withPrefillable"
-      :default-field="defaultFieldsIndex[field.name]"
-      :draggable="editable"
-      :with-custom-fields="withCustomFields"
-      class="mb-1.5"
-      @add-custom-field="addCustomField"
-      @dragstart="[fieldsDragFieldRef.value = field, removeDragOverlay($event), setDragPlaceholder($event)]"
-      @save="save"
-      @dragend="[fieldsDragFieldRef.value = null, $emit('set-drag-placeholder', null)]"
-      @remove="removeField"
-      @scroll-to="$emit('scroll-to-area', $event)"
-      @set-draw="$emit('set-draw', $event)"
-    />
-  </div>
-  <div v-if="submitterDefaultFields.length && editable">
+  <div v-if="(submitterDefaultFields.length || submitterFields.length) && editable" class="mt-1">
+    <input
+      v-model="defaultFieldsSearch"
+      :placeholder="t('search_field') + '...'"
+      class="input input-ghost input-xs px-0 text-base mb-2 !outline-0 !rounded bg-transparent w-full"
+    >
     <hr class="mb-2">
-    <template v-if="isShowFieldSearch">
-      <input
-        v-model="defaultFieldsSearch"
-        :placeholder="t('search_field')"
-        class="input input-ghost input-xs px-0 text-base mb-2 !outline-0 !rounded bg-transparent w-full"
-      >
-      <hr class="mb-2">
-    </template>
     <div
       class="overflow-auto relative"
       :style="{
-        maxHeight: isShowFieldSearch ? '400px' : (hasGroupedFields ? '400px' : ''),
-        minHeight: isShowFieldSearch ? '210px' : ''
+        maxHeight: '400px',
+        minHeight: defaultFieldsSearch ? '210px' : ''
       }"
     >
       <div
-        v-if="!filteredSubmitterDefaultFields.length && defaultFieldsSearch"
+        v-if="!filteredSubmitterDefaultFields.length && !filteredExistingFields.length && defaultFieldsSearch"
         class="top-0 bottom-0 text-center absolute flex items-center justify-center w-full flex-col"
       >
         <div>
@@ -74,6 +42,31 @@
           {{ t('clear') }}
         </a>
       </div>
+      <template v-if="defaultFieldsSearch && filteredExistingFields.length">
+        <div class="mb-1">
+          <div class="flex items-center gap-1 text-xs font-semibold opacity-60 py-1">
+            Added Fields
+          </div>
+          <div
+            v-for="field in filteredExistingFields"
+            :key="'existing-' + field.uuid"
+            :style="{ backgroundColor }"
+            class="border border-base-300 rounded relative group mb-2 cursor-pointer hover:bg-base-200/50"
+            @click="$emit('scroll-to-area', field.areas?.[0])"
+          >
+            <div class="flex items-center p-1 space-x-1">
+              <FieldType
+                :model-value="field.type || 'text'"
+                :editable="false"
+                :button-width="20"
+              />
+              <span class="block pl-0.5">
+                {{ field.name }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </template>
       <template v-if="hasGroupedFields">
         <template
           v-for="(sectionFields, sectionName) in groupedDefaultFields"
@@ -158,6 +151,35 @@
         </div>
       </template>
     </div>
+  </div>
+  <div
+    ref="fields"
+    class="fields mt-2"
+    :class="{ 'mb-1': !withCustomFields || !customFields.length }"
+    @dragover.prevent="onFieldDragover"
+    @drop="fieldsDragFieldRef.value ? reorderFields() : null"
+  >
+    <Field
+      v-for="field in submitterFields"
+      :key="field.uuid"
+      :data-uuid="field.uuid"
+      :field="field"
+      :type-index="getFieldTypeIndex(field)"
+      :editable="editable"
+      :with-signature-id="withSignatureId"
+      :with-prefillable="withPrefillable"
+      :default-field="defaultFieldsIndex[field.name]"
+      :draggable="editable"
+      :with-custom-fields="withCustomFields"
+      class="mb-1.5"
+      @add-custom-field="addCustomField"
+      @dragstart="[fieldsDragFieldRef.value = field, removeDragOverlay($event), setDragPlaceholder($event)]"
+      @save="save"
+      @dragend="[fieldsDragFieldRef.value = null, $emit('set-drag-placeholder', null)]"
+      @remove="removeField"
+      @scroll-to="$emit('scroll-to-area', $event)"
+      @set-draw="$emit('set-draw', $event)"
+    />
   </div>
   <div
     v-if="editable && withCustomFields && (customFields.length || newCustomField)"
@@ -588,6 +610,15 @@ export default {
       } else {
         return this.submitterDefaultFields
       }
+    },
+    filteredExistingFields () {
+      if (this.defaultFieldsSearch) {
+        return this.submitterFields.filter((f) =>
+          (f.name || '').toLowerCase().includes(this.defaultFieldsSearch.toLowerCase())
+        )
+      }
+
+      return []
     },
     hasGroupedFields () {
       return this.filteredSubmitterDefaultFields.some((f) => f.section)
