@@ -518,6 +518,8 @@ export default {
         return 'bg-gray-50'
       } else if (this.field.type === 'strikethrough') {
         return 'bg-transparent'
+      } else if (this.field.merchant_mapped) {
+        return 'bg-emerald-100'
       } else {
         return this.bgColors[this.submitterIndex % this.bgColors.length]
       }
@@ -527,6 +529,8 @@ export default {
         return ''
       } else if (this.field.type === 'strikethrough') {
         return 'border-dashed border-gray-300'
+      } else if (this.field.merchant_mapped) {
+        return 'border-emerald-500/80'
       } else {
         return this.borderColors[this.submitterIndex % this.borderColors.length]
       }
