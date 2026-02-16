@@ -19,7 +19,7 @@
       <% else %>
         <div class="flex items-center justify-center space-x-4 mr-1">
           <%= render 'shared/navbar_buttons' %>
-          <% if can?(:create, Submission) %>
+          <% if can?(:create, Submission) && respond_to?(:new_merchant_submission_path) %>
             <%= link_to new_merchant_submission_path, class: 'hidden md:inline-flex font-medium text-lg', data: { turbo: false } do %>
               Merchants
             <% end %>
