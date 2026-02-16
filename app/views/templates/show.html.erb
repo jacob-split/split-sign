@@ -18,6 +18,10 @@
           <span><%= t('export') %></span>
         <% end %>
         <% if !@template.archived_at? && can?(:create, Submission) %>
+          <%= link_to new_merchant_submission_path(template_id: @template.id), class: 'white-button !border', data: { turbo: false } do %>
+            <%= svg_icon('send', class: 'w-6 h-6 stroke-2') %>
+            <span class="hidden md:inline">Send to Merchant</span>
+          <% end %>
           <%= link_to new_template_submission_path(@template), id: 'add_recipients_button', class: 'white-button !border', data: { turbo_frame: 'modal' } do %>
             <%= svg_icon('plus', class: 'w-6 h-6 stroke-2') %>
             <%= t('add_recipients_html') %>

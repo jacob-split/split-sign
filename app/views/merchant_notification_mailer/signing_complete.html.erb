@@ -1,0 +1,29 @@
+<h2 style="margin: 0 0 16px 0; font-size: 20px; font-weight: 600; color: #111111;">
+  All Documents Signed
+</h2>
+
+<p style="margin: 0 0 16px 0; color: #333333; font-size: 14px; line-height: 1.5;">
+  <strong><%= @merchant_name %></strong> (<%= @merchant_email %>) has completed signing all documents.
+</p>
+
+<table style="width: 100%; border-collapse: collapse; margin-bottom: 16px;">
+  <thead>
+    <tr>
+      <th style="text-align: left; padding: 8px 12px; border-bottom: 2px solid #e5e5e5; font-size: 13px; color: #666;">Document</th>
+      <th style="text-align: left; padding: 8px 12px; border-bottom: 2px solid #e5e5e5; font-size: 13px; color: #666;">Signed At</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% @documents.each do |doc| %>
+      <tr>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px;"><%= doc[:name] %></td>
+        <td style="padding: 8px 12px; border-bottom: 1px solid #f0f0f0; font-size: 14px; color: #666;"><%= doc[:signed_at] %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<p style="margin: 0; color: #666666; font-size: 13px;">
+  You can view the signed documents on
+  <a href="<%= Docuseal::CONSOLE_URL %>" style="color: #FF4306;">Split Signature</a>.
+</p>

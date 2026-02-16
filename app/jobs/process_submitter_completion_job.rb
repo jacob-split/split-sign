@@ -29,6 +29,10 @@ class ProcessSubmitterCompletionJob
     end
 
     enqueue_completed_webhooks(submitter, is_all_completed:)
+
+    if submitter.metadata&.dig('merchant_id').present?
+      ProcessMerchantSigningJob.perform_async('submitter_id' => submitter.id)
+    end
   end
 
   def create_completed_submitter!(submitter)

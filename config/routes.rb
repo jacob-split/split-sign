@@ -59,6 +59,12 @@ Rails.application.routes.draw do
   resources :user_configs, only: %i[create]
   resources :encrypted_user_configs, only: %i[destroy]
   resources :timestamp_server, only: %i[create]
+  resources :merchant_submissions, only: %i[new create] do
+    collection do
+      post :search_merchants
+      post :preview
+    end
+  end
   resources :dashboard, only: %i[index]
   resources :setup, only: %i[index create]
   resource :newsletter, only: %i[show update]
