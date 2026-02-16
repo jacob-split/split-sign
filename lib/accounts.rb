@@ -117,8 +117,12 @@ module Accounts
         return Docuseal.default_pkcs if Docuseal::CERTS.present?
 
         EncryptedConfig.find_by(account:, key: EncryptedConfig::ESIGN_CERTS_KEY)&.value ||
-          EncryptedConfig.find_by(key: EncryptedConfig::ESIGN_CERTS_KEY).value
+          EncryptedConfig.find_by(key: EncryptedConfig::ESIGN_CERTS_KEY)&.value
       end
+
+    if cert_data.blank?
+      return generate_and_store_default_cert(account)
+    end
 
     if (default_cert = cert_data['custom']&.find { |e| e['status'] == 'default' })
       if default_cert['name'] == Docuseal::AATL_CERT_NAME
@@ -129,6 +133,16 @@ module Accounts
     else
       GenerateCertificate.load_pkcs(cert_data)
     end
+  end
+
+  def generate_and_store_default_cert(account)
+    cert_data = GenerateCertificate.call.transform_values(&:to_pem)
+    encrypted_config = EncryptedConfig.find_or_initialize_by(account: account,
+                                                             key: EncryptedConfig::ESIGN_CERTS_KEY)
+    encrypted_config.value = cert_data
+    encrypted_config.save!
+
+    GenerateCertificate.load_pkcs(cert_data)
   end
 
   def load_timeserver_url(account)
