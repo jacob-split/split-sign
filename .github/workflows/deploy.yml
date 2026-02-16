@@ -3,6 +3,7 @@ name: Deploy Split Signature
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -12,20 +13,14 @@ jobs:
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VM_HOST }}
-          username: jacob
+          username: ubuntu
           key: ${{ secrets.VM_SSH_KEY }}
           script: |
-            cd /opt/split-sign
+            cd /opt/docuseal
             git pull origin main
 
-            # Rebuild and restart Docker container
-            docker build -t split-sign .
-            docker stop split-sign 2>/dev/null || true
-            docker rm split-sign 2>/dev/null || true
-            docker run -d \
-              --name split-sign \
-              --restart unless-stopped \
-              -p 3000:3000 \
-              -v /opt/docuseal_data/docuseal:/data/docuseal \
-              --env-file /opt/docuseal_data/docuseal/docuseal.env \
-              split-sign
+            # Recompile assets and restart services
+            export PATH="/home/ubuntu/.rbenv/shims:/home/ubuntu/.rbenv/bin:$PATH"
+            export RAILS_ENV=production
+            bundle exec rake assets:precompile
+            sudo systemctl restart docuseal-web docuseal-worker
