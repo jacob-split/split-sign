@@ -79,6 +79,10 @@ class MerchantSubmissionsController < ApplicationController
     merchant_name = params[:merchant_name]
     merchant_id = params[:merchant_id]
 
+    Rails.logger.info("[MerchantSubmissions] Creating for merchant=#{merchant_name}, " \
+                      "field_values_count=#{field_values.size}, " \
+                      "non_empty=#{field_values.count { |_, v| v.present? }}")
+
     # Build fields array with name-based default values
     # Note: we do NOT mark fields as readonly — readonly fields are hidden from the
     # signing form entirely. Instead, pre-filled values are visible and editable so the

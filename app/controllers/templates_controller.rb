@@ -115,6 +115,7 @@ class TemplatesController < ApplicationController
       @merchant_email = merchant['email']
       @data_paths = result[:data_paths]
       @agent_only_fields = result[:agent_only_fields]
+      @field_values = result[:values].select { |_k, v| v.present? }
     end
 
     render layout: 'plain'

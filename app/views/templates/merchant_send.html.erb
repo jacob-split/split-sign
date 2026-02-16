@@ -32,7 +32,11 @@
         <% @agent_only_fields.each do |field_name| %>
           <input type="hidden" name="agent_only_fields[]" value="<%= field_name %>" />
         <% end %>
-        <div id="merchant-field-values-container"></div>
+        <div id="merchant-field-values-container">
+          <% @field_values.each do |field_name, value| %>
+            <input type="hidden" name="field_values[<%= field_name %>]" value="<%= value %>" data-field-name="<%= field_name %>" />
+          <% end %>
+        </div>
         <div class="flex items-center gap-3">
           <label class="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" name="send_email" value="1" checked class="checkbox checkbox-sm" />
@@ -62,28 +66,35 @@
     function collectFieldValues(event) {
       event.preventDefault();
 
-      var builderEl = document.querySelector('template-builder');
+      var container = document.getElementById('merchant-field-values-container');
       var fieldValues = {};
 
-      if (builderEl && builderEl.component) {
-        var fields = builderEl.component.template.fields || [];
-        fields.forEach(function(f) {
-          if (f.name && f.default_value) {
-            fieldValues[f.name] = f.default_value;
-          }
-        });
-      } else {
-        try {
-          var templateData = JSON.parse(builderEl.getAttribute('data-template'));
-          (templateData.fields || []).forEach(function(f) {
-            if (f.default_value && f.name) fieldValues[f.name] = f.default_value;
+      // Start with server-side pre-populated values (baseline)
+      container.querySelectorAll('input[data-field-name]').forEach(function(input) {
+        fieldValues[input.getAttribute('data-field-name')] = input.value;
+      });
+
+      // Override with any edits made in the builder (live Vue component state)
+      try {
+        var builderEl = document.querySelector('template-builder');
+        if (builderEl && builderEl.component) {
+          var fields = builderEl.component.template.fields || [];
+          fields.forEach(function(f) {
+            if (f.name) {
+              if (f.default_value != null && f.default_value !== '') {
+                fieldValues[f.name] = f.default_value;
+              } else if (!(f.name in fieldValues)) {
+                // Field exists in builder but has no value — don't override server value
+              }
+            }
           });
-        } catch(e) {}
+        }
+      } catch(e) {
+        console.warn('[MerchantSend] Could not read builder fields:', e);
       }
 
-      var container = document.getElementById('merchant-field-values-container');
+      // Rebuild hidden inputs with final merged values
       container.innerHTML = '';
-
       Object.keys(fieldValues).forEach(function(name) {
         var input = document.createElement('input');
         input.type = 'hidden';
