@@ -38,14 +38,19 @@ Rails.application.routes.draw do
         resources :emails, only: %i[create], controller: 'submissions', as: :submissions_emails
       end
     end
+    post 'submissions/pdf', to: 'submissions#create_from_document'
+    post 'submissions/html', to: 'submissions#create_from_document'
+    post 'submissions/docx', to: 'submissions#create_from_document'
     resources :templates, only: %i[create update show index destroy] do
       resources :clone, only: %i[create], controller: 'templates_clone'
       resources :submissions, only: %i[index create]
+      put :documents, on: :member, action: :update_documents, controller: 'templates'
     end
     post 'templates/pdf', to: 'templates#create'
     post 'templates/html', to: 'templates#create'
     post 'templates/docx', to: 'templates#create'
     post 'templates/doc', to: 'templates#create'
+    post 'templates/merge', to: 'templates#merge'
     resources :tools, only: %i[] do
       post :merge, on: :collection
       post :verify, on: :collection

@@ -2,7 +2,7 @@
 
 module Api
   class TemplatesController < ApiBaseController
-    load_and_authorize_resource :template, except: [:create]
+    load_and_authorize_resource :template, except: %i[create merge]
 
     def index
       templates = filter_templates(@templates, params)
@@ -136,7 +136,163 @@ module Api
       render json: @template.as_json(only: %i[id archived_at])
     end
 
+    def update_documents
+      Array.wrap(params[:documents]).each do |doc_params|
+        position = doc_params[:position].to_i
+
+        if doc_params[:remove].in?([true, 'true'])
+          remove_document_at_position(position, doc_params[:name])
+          next
+        end
+
+        if doc_params[:file].present?
+          file = build_file_from_params(doc_params)
+          file_params = { files: [file] }
+        end
+
+        if doc_params[:replace].in?([true, 'true']) && file_params
+          Templates::ReplaceAttachments.call(@template, file_params, extract_fields: true)
+        elsif file_params
+          new_docs = Templates::CreateAttachments.call(@template, file_params, extract_fields: true)
+
+          new_docs.each do |doc|
+            schema_entry = { attachment_uuid: doc.uuid, name: doc.filename.base }
+
+            if position.positive? && position <= @template.schema.size
+              @template.schema.insert(position, schema_entry)
+            else
+              @template.schema << schema_entry
+            end
+          end
+
+          if @template.fields.blank?
+            @template.fields = Templates::ProcessDocument.normalize_attachment_fields(@template, new_docs)
+          end
+        end
+      end
+
+      if params[:merge].in?([true, 'true']) && @template.schema.size > 1
+        merged = PdfUtils.merge(
+          @template.schema_documents.map { |d| StringIO.new(d.download) }
+        )
+        blob = ActiveStorage::Blob.create_and_upload!(
+          io: merged, filename: "#{@template.name}.pdf", content_type: 'application/pdf'
+        )
+        doc = @template.documents.create!(blob:)
+        Templates::ProcessDocument.call(doc, merged.string)
+        @template.schema = [{ attachment_uuid: doc.uuid, name: @template.name }]
+        @template.fields.each { |f| f['areas']&.each { |a| a['attachment_uuid'] = doc.uuid } }
+      end
+
+      @template.save!
+
+      WebhookUrls.enqueue_events(@template, 'template.updated')
+
+      render json: Templates::SerializeForApi.call(@template)
+    rescue Templates::CreateAttachments::PdfEncrypted
+      render json: { error: 'PDF is encrypted' }, status: :unprocessable_content
+    rescue DownloadUtils::UnableToDownload => e
+      render json: { error: e.message }, status: :unprocessable_content
+    end
+
+    def merge
+      authorize!(:create, Template)
+
+      template_ids = Array.wrap(params[:template_ids])
+
+      if template_ids.size < 2
+        return render json: { error: 'At least 2 template_ids are required' }, status: :unprocessable_content
+      end
+
+      templates = current_account.templates.where(id: template_ids).preload(:author, schema_documents: :blob)
+      templates = template_ids.filter_map { |id| templates.find { |t| t.id == id.to_i } }
+
+      if templates.size < 2
+        return render json: { error: 'Templates not found' }, status: :unprocessable_content
+      end
+
+      base_template = templates.first
+      merged_name = params[:name].presence || "#{base_template.name} (Merged)"
+
+      cloned = Templates::Clone.call(
+        base_template,
+        author: current_user,
+        name: merged_name,
+        external_id: params[:external_id],
+        folder_name: params[:folder_name]
+      )
+
+      cloned.source = :api
+      cloned.shared_link = params[:shared_link] if params.key?(:shared_link)
+
+      schema_documents = Templates::CloneAttachments.call(
+        template: cloned, original_template: base_template
+      )
+
+      templates[1..].each do |extra_template|
+        extra_cloned_submitters, extra_cloned_fields, extra_cloned_schema, =
+          Templates::Clone.update_submitters_and_fields_and_schema(
+            extra_template.submitters.deep_dup,
+            extra_template.fields.deep_dup,
+            extra_template.schema.deep_dup,
+            extra_template.preferences.deep_dup
+          )
+
+        extra_docs = Templates::CloneAttachments.call(
+          template: cloned, original_template: extra_template
+        )
+
+        role_mapping = {}
+        extra_cloned_submitters.each do |sub|
+          existing = cloned.submitters.find { |s| s['name'] == sub['name'] }
+          if existing
+            role_mapping[sub['uuid']] = existing['uuid']
+          else
+            cloned.submitters << sub
+            role_mapping[sub['uuid']] = sub['uuid']
+          end
+        end
+
+        extra_cloned_fields.each do |field|
+          field['submitter_uuid'] = role_mapping[field['submitter_uuid']] || field['submitter_uuid']
+          cloned.fields << field
+        end
+
+        cloned.schema.concat(extra_cloned_schema)
+        schema_documents = schema_documents + extra_docs
+      end
+
+      if Array.wrap(params[:roles]).present?
+        params[:roles].each_with_index do |role_name, i|
+          if cloned.submitters[i]
+            cloned.submitters[i]['name'] = role_name
+          end
+        end
+      end
+
+      Templates.maybe_assign_access(cloned)
+      cloned.save!
+
+      WebhookUrls.enqueue_events(cloned, 'template.created')
+      SearchEntries.enqueue_reindex(cloned)
+
+      render json: Templates::SerializeForApi.call(cloned, schema_documents:)
+    end
+
     private
+
+    def remove_document_at_position(position, name = nil)
+      removed = if name.present?
+                  @template.schema.find { |s| s['name'] == name }
+                elsif position.positive? && position <= @template.schema.size
+                  @template.schema[position - 1]
+                end
+
+      return unless removed
+
+      @template.schema.delete(removed)
+      @template.fields.reject! { |f| f['areas']&.any? { |a| a['attachment_uuid'] == removed['attachment_uuid'] } }
+    end
 
     def filter_templates(templates, params)
       templates = Templates.search(current_user, templates, params[:q])
