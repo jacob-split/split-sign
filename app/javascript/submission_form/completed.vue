@@ -71,7 +71,7 @@
       >
         <IconBrandGithub />
         <span>
-          Split Sign
+          Split Signature
         </span>
       </a>
       <a
@@ -94,7 +94,7 @@
         href="https://split-llc.com/start"
         target="_blank"
         class="underline"
-      >Split Sign</a> - {{ t('open_source_documents_software') }}
+      >Split Signature</a> - {{ t('open_source_documents_software') }}
     </div>
   </div>
 </template>

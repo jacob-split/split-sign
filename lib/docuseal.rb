@@ -6,7 +6,7 @@ module Docuseal
   PRODUCT_EMAIL_URL = ENV.fetch('PRODUCT_EMAIL_URL', PRODUCT_URL)
   NEWSLETTER_URL = "#{PRODUCT_URL}/newsletters".freeze
   ENQUIRIES_URL = "#{PRODUCT_URL}/enquiries".freeze
-  PRODUCT_NAME = 'Split Sign'
+  PRODUCT_NAME = 'Split Signature'
   DEFAULT_APP_URL = ENV.fetch('APP_URL', 'http://localhost:3000')
   GITHUB_URL = 'https://split-llc.com'
   DISCORD_URL = 'https://split-llc.com'
@@ -117,7 +117,7 @@ module Docuseal
   end
 
   def product_name
-    'Split Sign'
+    'Split Signature'
   end
 
   def refresh_default_url_options!
