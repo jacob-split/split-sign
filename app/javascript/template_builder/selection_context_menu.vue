@@ -96,6 +96,20 @@
         <IconAsteriskSimple class="w-4 h-4" />
         <span>{{ t('mark_optional') }}</span>
       </button>
+      <button
+        class="w-full px-2 py-1 rounded-md hover:bg-neutral-100 flex items-center space-x-2 text-sm"
+        @click.stop="setSelectedFieldsReadonly(false)"
+      >
+        <IconPencil class="w-4 h-4" />
+        <span>{{ t('mark_editable') }}</span>
+      </button>
+      <button
+        class="w-full px-2 py-1 rounded-md hover:bg-neutral-100 flex items-center space-x-2 text-sm"
+        @click.stop="setSelectedFieldsReadonly(true)"
+      >
+        <IconPencilOff class="w-4 h-4" />
+        <span>{{ t('mark_read_only') }}</span>
+      </button>
       <hr class="my-1 border-neutral-200">
       <button
         class="w-full px-2 py-1 rounded-md hover:bg-neutral-100 flex items-center justify-between text-sm"
@@ -147,7 +161,7 @@
 </template>
 
 <script>
-import { IconCopy, IconTrashX, IconTypography, IconRouteAltLeft, IconLayoutAlignLeft, IconLayoutAlignRight, IconLayoutAlignTop, IconLayoutAlignBottom, IconLayoutAlignMiddle, IconAspectRatio, IconArrowsHorizontal, IconArrowsVertical, IconAsterisk, IconAsteriskSimple } from '@tabler/icons-vue'
+import { IconCopy, IconTrashX, IconTypography, IconRouteAltLeft, IconLayoutAlignLeft, IconLayoutAlignRight, IconLayoutAlignTop, IconLayoutAlignBottom, IconLayoutAlignMiddle, IconAspectRatio, IconArrowsHorizontal, IconArrowsVertical, IconAsterisk, IconAsteriskSimple, IconPencil, IconPencilOff } from '@tabler/icons-vue'
 import FontModal from './font_modal'
 import ConditionsModal from './conditions_modal'
 import ContextSubmenu from './field_context_submenu'
@@ -170,6 +184,8 @@ export default {
     IconArrowsVertical,
     IconAsterisk,
     IconAsteriskSimple,
+    IconPencil,
+    IconPencilOff,
     ConditionsModal,
     ContextSubmenu
   },
@@ -337,6 +353,15 @@ export default {
           area.h = medianValue
         })
       }
+
+      this.save()
+
+      this.$emit('close')
+    },
+    setSelectedFieldsReadonly (readonly) {
+      this.selectedFields.forEach((field) => {
+        field.readonly = readonly
+      })
 
       this.save()
 
