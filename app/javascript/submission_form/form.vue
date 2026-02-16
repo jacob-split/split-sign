@@ -1349,7 +1349,9 @@ export default {
     },
     findNextStep (currentStepIndex) {
       if (this.onlyRequiredFields) {
-        return this.stepFields.find((step, index) => index > currentStepIndex && step.some((f) => f.required))
+        return this.stepFields.find((step, index) => {
+          return index > currentStepIndex && step.some((f) => f.required && isEmpty(this.values[f.uuid]))
+        })
       } else {
         return this.stepFields[currentStepIndex + 1]
       }

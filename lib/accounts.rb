@@ -126,7 +126,7 @@ module Accounts
 
     if (default_cert = cert_data['custom']&.find { |e| e['status'] == 'default' })
       if default_cert['name'] == Docuseal::AATL_CERT_NAME
-        Docuseal.default_pkcs
+        Docuseal.default_pkcs || GenerateCertificate.load_pkcs(cert_data)
       else
         OpenSSL::PKCS12.new(Base64.urlsafe_decode64(default_cert['data']), default_cert['password'].to_s)
       end
