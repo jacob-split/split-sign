@@ -1,151 +1,146 @@
 <%= content_for(:html_title, 'Split Signature | Professional Document Signing') %>
 
-<%# ===== HERO SECTION (full-width dark) ===== %>
-<section style="background: linear-gradient(135deg, #111111 0%, #1a1a1a 50%, #222222 100%);">
-  <%# Integrated navbar %>
+<%# ===== HERO SECTION ===== %>
+<section style="background: linear-gradient(160deg, #0f0f0f 0%, #1a1a1a 100%);">
+  <%# Navbar %>
   <nav class="max-w-6xl mx-auto px-6 md:px-8 py-5 flex items-center justify-between">
     <a href="/" class="flex items-center gap-3">
       <%= render 'shared/logo', height: '36' %>
       <span class="text-white font-bold text-xl hidden sm:inline">Split Signature</span>
     </a>
-    <%= link_to new_user_session_path({ lang: params[:lang] }.compact_blank), class: 'btn btn-sm border-white/20 bg-white/10 text-white hover:bg-white/20 backdrop-blur' do %>
+    <%= link_to new_user_session_path({ lang: params[:lang] }.compact_blank), class: 'inline-flex items-center gap-2 px-5 py-2 rounded-full text-sm font-medium text-white border border-white/30 hover:bg-white hover:text-black transition-all duration-200' do %>
       <%= svg_icon('login', class: 'w-4 h-4') %>
       <span><%= t('sign_in') %></span>
     <% end %>
   </nav>
 
   <%# Hero content %>
-  <div class="max-w-4xl mx-auto px-6 md:px-8 pt-16 pb-24 md:pt-24 md:pb-32 text-center">
-    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium mb-8" style="background: rgba(255, 67, 6, 0.15); color: #FF6B3D;">
-      <%= svg_icon('sparkles', class: 'w-4 h-4') %>
-      Professional document signing for your business
-    </div>
-    <h1 class="text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight text-white leading-tight">
+  <div class="max-w-3xl mx-auto px-6 md:px-8 pt-20 pb-28 md:pt-28 md:pb-36 text-center">
+    <h1 class="text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight text-white leading-[1.1]">
       Document signing,<br> done right.
     </h1>
-    <p class="mt-6 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed" style="color: #9CA3AF;">
+    <p class="mt-6 text-lg md:text-xl max-w-xl mx-auto leading-relaxed" style="color: #999;">
       Send, sign, and manage legally binding documents in minutes.
       Fast, secure, and built for teams that move quickly.
     </p>
     <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
-      <%= link_to new_user_session_path, class: 'btn btn-lg border-0 px-8 text-base shadow-lg' do %>
+      <%= link_to new_user_session_path, class: 'inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-base font-semibold text-white transition-all duration-200 shadow-lg hover:opacity-90', style: 'background-color: #FF4306;' do %>
         Get Started
-        <%= svg_icon('arrow_right', class: 'w-5 h-5 ml-1') %>
+        <%= svg_icon('arrow_right', class: 'w-5 h-5') %>
       <% end %>
-      <a href="#features" class="btn btn-lg btn-ghost text-white border border-white/20 hover:bg-white/10 px-8 text-base">
+      <a href="#features" class="inline-flex items-center px-8 py-3.5 rounded-full text-base font-medium text-white border border-white/30 hover:bg-white hover:text-black transition-all duration-200">
         Learn More
       </a>
     </div>
   </div>
 </section>
 
-<%# ===== TRUST INDICATORS ===== %>
-<section class="border-b border-base-300" style="background-color: #FAFAFA;">
-  <div class="max-w-6xl mx-auto px-6 md:px-8 py-6">
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-      <div class="flex items-center gap-3 justify-center py-2">
-        <div class="flex items-center justify-center w-10 h-10 rounded-xl" style="background-color: #FFF0EB;">
-          <%= svg_icon('shield_check', class: 'w-5 h-5 text-accent') %>
-        </div>
-        <span class="text-sm font-medium text-gray-700">Bank-grade<br class="hidden sm:block"> encryption</span>
+<%# ===== TRUST BAR ===== %>
+<section style="background-color: #FAFAFA; border-bottom: 1px solid #E5E5E5;">
+  <div class="max-w-4xl mx-auto px-6 md:px-8 py-8">
+    <div class="flex flex-wrap items-center justify-center gap-x-8 gap-y-5 md:gap-x-12">
+      <div class="flex items-center gap-2.5">
+        <span class="flex items-center justify-center w-8 h-8 rounded-lg" style="background-color: #FFF0EB;">
+          <%= svg_icon('shield_check', class: 'w-4 h-4 text-accent') %>
+        </span>
+        <span class="text-sm font-medium text-gray-600">Bank-grade encryption</span>
       </div>
-      <div class="flex items-center gap-3 justify-center py-2">
-        <div class="flex items-center justify-center w-10 h-10 rounded-xl" style="background-color: #FFF0EB;">
-          <%= svg_icon('certificate', class: 'w-5 h-5 text-accent') %>
-        </div>
-        <span class="text-sm font-medium text-gray-700">Legally binding<br class="hidden sm:block"> signatures</span>
+      <div class="flex items-center gap-2.5">
+        <span class="flex items-center justify-center w-8 h-8 rounded-lg" style="background-color: #FFF0EB;">
+          <%= svg_icon('certificate', class: 'w-4 h-4 text-accent') %>
+        </span>
+        <span class="text-sm font-medium text-gray-600">Legally binding signatures</span>
       </div>
-      <div class="flex items-center gap-3 justify-center py-2">
-        <div class="flex items-center justify-center w-10 h-10 rounded-xl" style="background-color: #FFF0EB;">
-          <%= svg_icon('devices', class: 'w-5 h-5 text-accent') %>
-        </div>
-        <span class="text-sm font-medium text-gray-700">Works on<br class="hidden sm:block"> any device</span>
+      <div class="flex items-center gap-2.5">
+        <span class="flex items-center justify-center w-8 h-8 rounded-lg" style="background-color: #FFF0EB;">
+          <%= svg_icon('devices', class: 'w-4 h-4 text-accent') %>
+        </span>
+        <span class="text-sm font-medium text-gray-600">Works on any device</span>
       </div>
-      <div class="flex items-center gap-3 justify-center py-2">
-        <div class="flex items-center justify-center w-10 h-10 rounded-xl" style="background-color: #FFF0EB;">
-          <%= svg_icon('clock', class: 'w-5 h-5 text-accent') %>
-        </div>
-        <span class="text-sm font-medium text-gray-700">Complete<br class="hidden sm:block"> audit trail</span>
+      <div class="flex items-center gap-2.5">
+        <span class="flex items-center justify-center w-8 h-8 rounded-lg" style="background-color: #FFF0EB;">
+          <%= svg_icon('clock', class: 'w-4 h-4 text-accent') %>
+        </span>
+        <span class="text-sm font-medium text-gray-600">Complete audit trail</span>
       </div>
     </div>
   </div>
 </section>
 
-<%# ===== FEATURES SECTION ===== %>
+<%# ===== FEATURES ===== %>
 <section id="features" class="bg-white">
-  <div class="max-w-6xl mx-auto px-6 md:px-8 py-20 md:py-28">
-    <div class="text-center mb-16">
-      <span class="inline-block text-xs font-bold uppercase tracking-widest text-accent mb-4 px-3 py-1 rounded-full" style="background-color: #FFF0EB;">Features</span>
-      <h2 class="text-3xl md:text-5xl font-bold tracking-tight">Everything you need to<br class="hidden md:block"> close deals faster</h2>
-      <p class="mt-5 text-gray-500 text-lg max-w-xl mx-auto">
+  <div class="max-w-6xl mx-auto px-6 md:px-8 py-20 md:py-24">
+    <div class="text-center mb-14">
+      <h2 class="text-3xl md:text-4xl font-bold tracking-tight">Everything you need to close deals faster</h2>
+      <p class="mt-4 text-gray-500 text-lg max-w-lg mx-auto">
         A complete platform built for speed, security, and simplicity.
       </p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
 
-      <div class="group p-8 rounded-2xl border border-base-300 bg-white transition-all duration-200 hover:shadow-xl hover:-translate-y-1" style="border-top: 3px solid #FF4306;">
-        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-6" style="background-color: #FFF0EB;">
-          <%= svg_icon('writing_sign', class: 'w-7 h-7 text-accent') %>
+      <div class="p-7 rounded-xl bg-white border border-gray-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
+        <div class="flex items-center justify-center w-11 h-11 rounded-lg mb-5" style="background-color: #FFF0EB;">
+          <%= svg_icon('writing_sign', class: 'w-5 h-5 text-accent') %>
         </div>
-        <h3 class="text-xl font-bold mb-3">E-Signatures</h3>
-        <p class="text-gray-500 leading-relaxed">
+        <h3 class="text-lg font-bold mb-2">E-Signatures</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">
           Collect legally binding electronic signatures from anyone, anywhere.
-          Signers draw, type, or upload their signature from any device.
+          Signers draw, type, or upload their signature.
         </p>
       </div>
 
-      <div class="group p-8 rounded-2xl border border-base-300 bg-white transition-all duration-200 hover:shadow-xl hover:-translate-y-1" style="border-top: 3px solid #FF4306;">
-        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-6" style="background-color: #FFF0EB;">
-          <%= svg_icon('forms', class: 'w-7 h-7 text-accent') %>
+      <div class="p-7 rounded-xl bg-white border border-gray-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
+        <div class="flex items-center justify-center w-11 h-11 rounded-lg mb-5" style="background-color: #FFF0EB;">
+          <%= svg_icon('forms', class: 'w-5 h-5 text-accent') %>
         </div>
-        <h3 class="text-xl font-bold mb-3">Reusable Templates</h3>
-        <p class="text-gray-500 leading-relaxed">
+        <h3 class="text-lg font-bold mb-2">Reusable Templates</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">
           Upload your documents once and reuse them.
-          Add signature fields, text inputs, dates, checkboxes, and more.
+          Add signature fields, text inputs, dates, and more.
         </p>
       </div>
 
-      <div class="group p-8 rounded-2xl border border-base-300 bg-white transition-all duration-200 hover:shadow-xl hover:-translate-y-1" style="border-top: 3px solid #FF4306;">
-        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-6" style="background-color: #FFF0EB;">
-          <%= svg_icon('send', class: 'w-7 h-7 text-accent') %>
+      <div class="p-7 rounded-xl bg-white border border-gray-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
+        <div class="flex items-center justify-center w-11 h-11 rounded-lg mb-5" style="background-color: #FFF0EB;">
+          <%= svg_icon('send', class: 'w-5 h-5 text-accent') %>
         </div>
-        <h3 class="text-xl font-bold mb-3">Automated Sending</h3>
-        <p class="text-gray-500 leading-relaxed">
-          Send documents to multiple signers with automatic email notifications,
+        <h3 class="text-lg font-bold mb-2">Automated Sending</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">
+          Send documents to multiple signers with automatic notifications,
           reminders, and completion tracking.
         </p>
       </div>
 
-      <div class="group p-8 rounded-2xl border border-base-300 bg-white transition-all duration-200 hover:shadow-xl hover:-translate-y-1" style="border-top: 3px solid #FF4306;">
-        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-6" style="background-color: #FFF0EB;">
-          <%= svg_icon('lock', class: 'w-7 h-7 text-accent') %>
+      <div class="p-7 rounded-xl bg-white border border-gray-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
+        <div class="flex items-center justify-center w-11 h-11 rounded-lg mb-5" style="background-color: #FFF0EB;">
+          <%= svg_icon('lock', class: 'w-5 h-5 text-accent') %>
         </div>
-        <h3 class="text-xl font-bold mb-3">Secure & Compliant</h3>
-        <p class="text-gray-500 leading-relaxed">
-          Every document is encrypted and every signature includes a
-          tamper-proof audit trail with timestamps and IP verification.
+        <h3 class="text-lg font-bold mb-2">Secure & Compliant</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">
+          Every document is encrypted with a tamper-proof audit trail,
+          timestamps, and IP verification.
         </p>
       </div>
 
-      <div class="group p-8 rounded-2xl border border-base-300 bg-white transition-all duration-200 hover:shadow-xl hover:-translate-y-1" style="border-top: 3px solid #FF4306;">
-        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-6" style="background-color: #FFF0EB;">
-          <%= svg_icon('api', class: 'w-7 h-7 text-accent') %>
+      <div class="p-7 rounded-xl bg-white border border-gray-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
+        <div class="flex items-center justify-center w-11 h-11 rounded-lg mb-5" style="background-color: #FFF0EB;">
+          <%= svg_icon('api', class: 'w-5 h-5 text-accent') %>
         </div>
-        <h3 class="text-xl font-bold mb-3">Developer API</h3>
-        <p class="text-gray-500 leading-relaxed">
-          Integrate document signing into your own application with a
-          full-featured REST API and webhook notifications.
+        <h3 class="text-lg font-bold mb-2">Developer API</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">
+          Integrate document signing into your application with a
+          full REST API and webhook notifications.
         </p>
       </div>
 
-      <div class="group p-8 rounded-2xl border border-base-300 bg-white transition-all duration-200 hover:shadow-xl hover:-translate-y-1" style="border-top: 3px solid #FF4306;">
-        <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-6" style="background-color: #FFF0EB;">
-          <%= svg_icon('devices', class: 'w-7 h-7 text-accent') %>
+      <div class="p-7 rounded-xl bg-white border border-gray-200 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200">
+        <div class="flex items-center justify-center w-11 h-11 rounded-lg mb-5" style="background-color: #FFF0EB;">
+          <%= svg_icon('devices', class: 'w-5 h-5 text-accent') %>
         </div>
-        <h3 class="text-xl font-bold mb-3">Mobile Optimized</h3>
-        <p class="text-gray-500 leading-relaxed">
-          Your signers can review and sign documents on any phone, tablet,
+        <h3 class="text-lg font-bold mb-2">Mobile Optimized</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">
+          Signers can review and sign on any phone, tablet,
           or desktop. No app download required.
         </p>
       </div>
@@ -155,51 +150,48 @@
 </section>
 
 <%# ===== HOW IT WORKS ===== %>
-<section style="background-color: #FAFAFA;">
-  <div class="max-w-6xl mx-auto px-6 md:px-8 py-20 md:py-28">
-    <div class="text-center mb-16">
-      <span class="inline-block text-xs font-bold uppercase tracking-widest text-accent mb-4 px-3 py-1 rounded-full" style="background-color: #FFF0EB;">How It Works</span>
-      <h2 class="text-3xl md:text-5xl font-bold tracking-tight">Three steps to a signed document</h2>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12">
+<section style="background-color: #FAFAFA; border-top: 1px solid #E5E5E5;">
+  <div class="max-w-4xl mx-auto px-6 md:px-8 py-20 md:py-24">
+    <h2 class="text-3xl md:text-4xl font-bold tracking-tight text-center mb-14">Three steps to a signed document</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
       <div class="text-center">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full text-white text-2xl font-bold mb-6" style="background-color: #FF4306;">1</div>
-        <h3 class="text-xl font-bold mb-3">Upload</h3>
-        <p class="text-gray-500">Upload a PDF or create a template. Drag and drop signature fields exactly where you need them.</p>
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-full text-white text-xl font-bold mb-5" style="background-color: #FF4306;">1</div>
+        <h3 class="text-lg font-bold mb-2">Upload</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">Upload a PDF or create a template. Drag and drop fields where you need them.</p>
       </div>
       <div class="text-center">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full text-white text-2xl font-bold mb-6" style="background-color: #FF4306;">2</div>
-        <h3 class="text-xl font-bold mb-3">Send</h3>
-        <p class="text-gray-500">Add your signers' email addresses and send. They get a secure link to review and sign.</p>
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-full text-white text-xl font-bold mb-5" style="background-color: #FF4306;">2</div>
+        <h3 class="text-lg font-bold mb-2">Send</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">Add your signers and send. They get a secure link to review and sign.</p>
       </div>
       <div class="text-center">
-        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full text-white text-2xl font-bold mb-6" style="background-color: #FF4306;">3</div>
-        <h3 class="text-xl font-bold mb-3">Done</h3>
-        <p class="text-gray-500">Everyone gets a signed copy. A tamper-proof audit trail is attached automatically.</p>
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-full text-white text-xl font-bold mb-5" style="background-color: #FF4306;">3</div>
+        <h3 class="text-lg font-bold mb-2">Done</h3>
+        <p class="text-gray-500 text-sm leading-relaxed">Everyone gets a signed copy with a tamper-proof audit trail attached.</p>
       </div>
     </div>
   </div>
 </section>
 
-<%# ===== BOTTOM CTA (full-width dark) ===== %>
-<section style="background: linear-gradient(135deg, #111111 0%, #1a1a1a 50%, #222222 100%);">
-  <div class="max-w-4xl mx-auto px-6 md:px-8 py-20 md:py-28 text-center">
-    <h2 class="text-3xl md:text-5xl font-bold text-white tracking-tight">Ready to get started?</h2>
-    <p class="mt-5 text-lg max-w-lg mx-auto" style="color: #9CA3AF;">
+<%# ===== BOTTOM CTA ===== %>
+<section style="background: linear-gradient(160deg, #0f0f0f 0%, #1a1a1a 100%);">
+  <div class="max-w-3xl mx-auto px-6 md:px-8 py-20 md:py-24 text-center">
+    <h2 class="text-3xl md:text-4xl font-bold text-white tracking-tight">Ready to get started?</h2>
+    <p class="mt-4 text-lg max-w-md mx-auto" style="color: #999;">
       Sign in to start sending documents for signature today.
     </p>
-    <div class="mt-10">
-      <%= link_to new_user_session_path, class: 'btn btn-lg border-0 px-10 text-base shadow-lg' do %>
+    <div class="mt-8">
+      <%= link_to new_user_session_path, class: 'inline-flex items-center gap-2 px-8 py-3.5 rounded-full text-base font-semibold text-white transition-all duration-200 shadow-lg hover:opacity-90', style: 'background-color: #FF4306;' do %>
         Get Started
-        <%= svg_icon('arrow_right', class: 'w-5 h-5 ml-1') %>
+        <%= svg_icon('arrow_right', class: 'w-5 h-5') %>
       <% end %>
     </div>
   </div>
 </section>
 
 <%# ===== FOOTER ===== %>
-<footer class="border-t border-base-300">
-  <div class="max-w-6xl mx-auto px-6 md:px-8 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
+<footer style="border-top: 1px solid #E5E5E5;">
+  <div class="max-w-6xl mx-auto px-6 md:px-8 py-7 flex flex-col md:flex-row items-center justify-between gap-4">
     <div class="flex items-center gap-2">
       <%= render 'shared/logo', height: '24' %>
       <span class="text-sm text-gray-400">&copy; <%= Date.current.year %> Split LLC</span>
