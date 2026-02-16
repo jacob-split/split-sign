@@ -83,6 +83,21 @@
       </button>
       <hr class="my-1 border-neutral-200">
       <button
+        class="w-full px-2 py-1 rounded-md hover:bg-neutral-100 flex items-center space-x-2 text-sm"
+        @click.stop="setSelectedFieldsRequired(true)"
+      >
+        <IconAsterisk class="w-4 h-4" />
+        <span>{{ t('mark_required') }}</span>
+      </button>
+      <button
+        class="w-full px-2 py-1 rounded-md hover:bg-neutral-100 flex items-center space-x-2 text-sm"
+        @click.stop="setSelectedFieldsRequired(false)"
+      >
+        <IconAsteriskSimple class="w-4 h-4" />
+        <span>{{ t('mark_optional') }}</span>
+      </button>
+      <hr class="my-1 border-neutral-200">
+      <button
         class="w-full px-2 py-1 rounded-md hover:bg-neutral-100 flex items-center justify-between text-sm"
         @click.stop="$emit('copy')"
       >
@@ -132,7 +147,7 @@
 </template>
 
 <script>
-import { IconCopy, IconTrashX, IconTypography, IconRouteAltLeft, IconLayoutAlignLeft, IconLayoutAlignRight, IconLayoutAlignTop, IconLayoutAlignBottom, IconLayoutAlignMiddle, IconAspectRatio, IconArrowsHorizontal, IconArrowsVertical } from '@tabler/icons-vue'
+import { IconCopy, IconTrashX, IconTypography, IconRouteAltLeft, IconLayoutAlignLeft, IconLayoutAlignRight, IconLayoutAlignTop, IconLayoutAlignBottom, IconLayoutAlignMiddle, IconAspectRatio, IconArrowsHorizontal, IconArrowsVertical, IconAsterisk, IconAsteriskSimple } from '@tabler/icons-vue'
 import FontModal from './font_modal'
 import ConditionsModal from './conditions_modal'
 import ContextSubmenu from './field_context_submenu'
@@ -153,6 +168,8 @@ export default {
     FontModal,
     IconArrowsHorizontal,
     IconArrowsVertical,
+    IconAsterisk,
+    IconAsteriskSimple,
     ConditionsModal,
     ContextSubmenu
   },
@@ -320,6 +337,15 @@ export default {
           area.h = medianValue
         })
       }
+
+      this.save()
+
+      this.$emit('close')
+    },
+    setSelectedFieldsRequired (required) {
+      this.selectedFields.forEach((field) => {
+        field.required = required
+      })
 
       this.save()
 

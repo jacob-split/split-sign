@@ -935,7 +935,7 @@ export default {
   },
   computed: {
     submitterDefaultNames: FieldSubmitter.computed.names,
-    isSelectModeRef: () => ref(false),
+    isSelectModeRef: () => ref(true),
     isCmdKeyRef: () => ref(false),
     fieldsDragFieldRef: () => ref(),
     customDragFieldRef: () => ref(),
