@@ -80,10 +80,18 @@ class MerchantSubmissionsController < ApplicationController
     merchant_id = params[:merchant_id]
 
     # Build fields array with name-based default values
+    # Note: we do NOT mark fields as readonly — readonly fields are hidden from the
+    # signing form entirely. Instead, pre-filled values are visible and editable so the
+    # merchant can verify and correct them.
     fields = field_values.map do |field_name, value|
-      entry = { 'name' => field_name, 'default_value' => value }
-      entry['readonly'] = true if agent_only_fields.include?(field_name)
-      entry
+      { 'name' => field_name, 'default_value' => value }
+    end
+
+    # Ensure signature and initials fields are required so merchants can't skip signing
+    template.fields.each do |f|
+      next unless %w[signature initials].include?(f['type'])
+
+      fields << { 'name' => f['name'], 'required' => true }
     end
 
     # Build UUID-keyed values hash so submitter.values gets populated
@@ -104,7 +112,6 @@ class MerchantSubmissionsController < ApplicationController
         role: submitter_role,
         fields: fields,
         values: submitter_values,
-        readonly_fields: agent_only_fields,
         metadata: { 'merchant_id' => merchant_id }
       }.with_indifferent_access]
     }]
@@ -125,9 +132,6 @@ class MerchantSubmissionsController < ApplicationController
     submitter = submissions.first&.submitters&.first
 
     if submitter
-      # Skip optional fields in the signing form — merchant docs can have hundreds of fields
-      submitter.update!(preferences: submitter.preferences.merge('only_required_fields' => true))
-
       # Write to Supabase merchant_documents
       SupabaseClient.insert_merchant_document({
         merchant_id: merchant_id,
