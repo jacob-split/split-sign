@@ -2,6 +2,8 @@
 
 require 'net/http'
 require 'json'
+require 'zlib'
+require 'stringio'
 
 module SupabaseClient
   Error = Class.new(StandardError)
@@ -145,9 +147,21 @@ module SupabaseClient
       raise Error, "Supabase API error (#{response.code}): #{response.body}"
     end
 
-    JSON.parse(response.body)
+    body = decode_body(response)
+    JSON.parse(body)
   rescue JSON::ParserError
     []
+  end
+
+  def decode_body(response)
+    case response['content-encoding']
+    when 'gzip'
+      Zlib::GzipReader.new(StringIO.new(response.body)).read
+    when 'deflate'
+      Zlib::Inflate.inflate(response.body)
+    else
+      response.body
+    end
   end
 
   def supabase_url
