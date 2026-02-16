@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html data-theme="split" lang="<%= I18n.locale %>">
+  <head>
+    <%= render 'layouts/head_tags' %>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <%= csrf_meta_tags %>
+    <% if ENV['ROLLBAR_CLIENT_TOKEN'] %>
+      <meta name="rollbar-token" content="<%= ENV.fetch('ROLLBAR_CLIENT_TOKEN', nil) %>">
+      <%= javascript_pack_tag 'rollbar', 'application', defer: true %>
+    <% else %>
+      <%= javascript_pack_tag 'application', defer: true %>
+    <% end %>
+    <% if canonical_url = content_for(:canonical_url) %>
+      <link href="<%= canonical_url %>" rel="canonical">
+    <% end %>
+    <%= stylesheet_pack_tag 'application', media: 'all' %>
+  </head>
+  <body>
+    <% if flash.present? %><%= render 'shared/flash' %><% end %>
+    <%= yield %>
+    <%= render 'shared/body_scripts' %>
+  </body>
+</html>
