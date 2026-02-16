@@ -86,6 +86,15 @@ class MerchantSubmissionsController < ApplicationController
       entry
     end
 
+    # Build UUID-keyed values hash so submitter.values gets populated
+    # (the signing form and dashboard both read from submitter.values)
+    fields_by_name = template.fields.index_by { |f| f['name'] }
+    submitter_values = {}
+    field_values.each do |field_name, value|
+      field = fields_by_name[field_name]
+      submitter_values[field['uuid']] = value if field && value.present?
+    end
+
     submitter_role = template.submitters.first['name']
 
     submissions_attrs = [{
@@ -94,6 +103,7 @@ class MerchantSubmissionsController < ApplicationController
         name: merchant_name,
         role: submitter_role,
         fields: fields,
+        values: submitter_values,
         readonly_fields: agent_only_fields,
         metadata: { 'merchant_id' => merchant_id }
       }]
