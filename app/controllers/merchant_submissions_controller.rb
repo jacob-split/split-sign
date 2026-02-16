@@ -134,7 +134,6 @@ class MerchantSubmissionsController < ApplicationController
         template_id: template.id,
         template_name: template.name,
         submission_id: submitter.submission_id,
-        submitter_slug: submitter.slug,
         embed_src: "#{Docuseal::CONSOLE_URL}/s/#{submitter.slug}"
       })
 
