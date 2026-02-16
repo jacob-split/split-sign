@@ -14,8 +14,8 @@
     @focus-step="[saveStep(), currentField.type !== 'checkbox' ? isFormVisible = true : '', goToStep($event, false, true)]"
   />
   <FieldAreas
-    :steps="readonlyConditionalFields.map((e) => [e])"
-    :values="readonlyConditionalFieldValues"
+    :steps="readonlyFields.map((e) => [e])"
+    :values="readonlyFieldValues"
     :submitter="submitter"
     :attachments-index="attachmentsIndex"
     :submittable="false"
@@ -1173,6 +1173,15 @@ export default {
     this.fields.forEach((field) => {
       if (field.default_value && !field.readonly) {
         this.values[field.uuid] ||= field.default_value
+      }
+
+      if (field.type === 'date' && !field.readonly && !this.values[field.uuid]) {
+        const today = new Date()
+        const yyyy = today.getFullYear()
+        const mm = String(today.getMonth() + 1).padStart(2, '0')
+        const dd = String(today.getDate()).padStart(2, '0')
+
+        this.values[field.uuid] = `${yyyy}-${mm}-${dd}`
       }
     })
 
