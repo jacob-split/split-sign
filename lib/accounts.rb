@@ -136,7 +136,7 @@ module Accounts
   end
 
   def generate_and_store_default_cert(account)
-    cert_data = GenerateCertificate.call.transform_values(&:to_pem)
+    cert_data = GenerateCertificate.call.transform_values(&:to_pem).stringify_keys
     encrypted_config = EncryptedConfig.find_or_initialize_by(account: account,
                                                              key: EncryptedConfig::ESIGN_CERTS_KEY)
     encrypted_config.value = cert_data
