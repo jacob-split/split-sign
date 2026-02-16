@@ -102,10 +102,10 @@ class MerchantSubmissionsController < ApplicationController
     submissions = Submissions.create_from_submitters(
       template: template,
       user: current_user,
-      source: :api,
+      source: :invite,
       submitters_order: 'random',
       submissions_attrs: submissions_attrs,
-      params: { 'send_email' => params[:send_email] != '0' }
+      params: { 'send_email' => params[:send_email] != '0', 'send_completed_email' => true }
     )
 
     WebhookUrls.enqueue_events(submissions, 'submission.created')
