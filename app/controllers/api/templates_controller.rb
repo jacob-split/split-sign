@@ -88,6 +88,8 @@ module Api
         @template.save!
       end
 
+      ensure_submitter_uuids(@template)
+
       WebhookUrls.enqueue_events(@template, 'template.created')
       SearchEntries.enqueue_reindex(@template)
 
@@ -118,6 +120,8 @@ module Api
       end
 
       @template.update!(template_params)
+
+      ensure_submitter_uuids(@template)
 
       SearchEntries.enqueue_reindex(@template)
 
@@ -280,6 +284,19 @@ module Api
     end
 
     private
+
+    def ensure_submitter_uuids(template)
+      changed = false
+
+      template.submitters.each do |submitter|
+        next if submitter['uuid'].present?
+
+        submitter['uuid'] = SecureRandom.uuid
+        changed = true
+      end
+
+      template.save! if changed
+    end
 
     def remove_document_at_position(position, name = nil)
       removed = if name.present?
