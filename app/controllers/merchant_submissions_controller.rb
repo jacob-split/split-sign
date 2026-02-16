@@ -83,17 +83,18 @@ class MerchantSubmissionsController < ApplicationController
                       "field_values_count=#{field_values.size}, " \
                       "non_empty=#{field_values.count { |_, v| v.present? }}")
 
-    # Build fields array with name-based default values
-    # Note: we do NOT mark fields as readonly — readonly fields are hidden from the
-    # signing form entirely. Instead, pre-filled values are visible and editable so the
-    # merchant can verify and correct them.
+    # Build fields array with name-based default values.
+    # Pre-filled fields are visible, editable, and required — the merchant must at least
+    # see and confirm each value. We do NOT mark fields as readonly because readonly
+    # fields are hidden from the signing form entirely.
     fields = field_values.map do |field_name, value|
-      { 'name' => field_name, 'default_value' => value }
+      { 'name' => field_name, 'default_value' => value, 'required' => true }
     end
 
-    # Ensure signature and initials fields are required so merchants can't skip signing
+    # Ensure signature and initials fields are also required so merchants can't skip signing
     template.fields.each do |f|
       next unless %w[signature initials].include?(f['type'])
+      next if fields.any? { |e| e['name'] == f['name'] }
 
       fields << { 'name' => f['name'], 'required' => true }
     end
