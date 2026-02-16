@@ -5,7 +5,6 @@
       <%= render 'shared/title' %>
     </a>
     <span class="hidden sm:inline">
-      <%= render 'shared/github' if request.path.starts_with?('/settings') %>
     </span>
   </div>
   <% if signed_in? %>
@@ -20,6 +19,11 @@
       <% else %>
         <div class="flex items-center justify-center space-x-4 mr-1">
           <%= render 'shared/navbar_buttons' %>
+          <% if can?(:create, Submission) %>
+            <%= link_to new_merchant_submission_path, class: 'hidden md:inline-flex font-medium text-lg', data: { turbo: false } do %>
+              Merchants
+            <% end %>
+          <% end %>
           <%= link_to t('settings'), settings_profile_index_path, class: 'hidden md:inline-flex font-medium text-lg', id: 'account_settings_button' %>
         </div>
       <% end %>
@@ -47,14 +51,6 @@
               <%= link_to settings_esign_path, class: 'flex items-center' do %>
                 <%= svg_icon('zoom_check', class: 'w-5 h-5 flex-shrink-0 stroke-2') %>
                 <span class="mr-1 whitespace-nowrap"><%= t('verify_pdf') %></span>
-              <% end %>
-            </li>
-          <% end %>
-          <% if Docuseal.multitenant? || current_user.role == 'superadmin' %>
-            <li>
-              <%= link_to Docuseal::CHATGPT_URL, target: 'blank', class: 'flex items-center' do %>
-                <%= svg_icon('sparkles', class: 'w-5 h-5 flex-shrink-0 stroke-2') %>
-                <span class="mr-1 whitespace-nowrap"><%= t('ask_ai') %></span>
               <% end %>
             </li>
           <% end %>
