@@ -262,10 +262,7 @@ module Templates
     def name_from_nearby_text(field, text_nodes, page)
       return nil if text_nodes.blank?
 
-      pw = page.width.to_f
-      ph = page.height.to_f
-
-      # Field position in normalized 0-1 coordinates
+      # Field position in normalized 0-1 coordinates (from AI inference)
       fx = field.x
       fy = field.y
       fw = field.w
@@ -277,11 +274,11 @@ module Templates
       label_chars = []
 
       text_nodes.each do |tn|
-        # Convert text node coords (pixel space) to normalized 0-1 space
-        tx = tn.x / pw
-        ty = tn.y / ph
-        tx_end = tn.endx / pw
-        ty_end = tn.endy / ph
+        # Text node coords from Pdfium are already in normalized 0-1 space
+        tx = tn.x
+        ty = tn.y
+        tx_end = tn.endx
+        ty_end = tn.endy
 
         # Text must be above the field (ty_end <= fy + small overlap) and not too far above
         next unless ty_end <= fy + 0.005 && ty_end >= fy - label_margin_y
