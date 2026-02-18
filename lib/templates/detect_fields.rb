@@ -141,13 +141,17 @@ module Templates
 
         fields = fields.reject { |f| f.confidence < confidence }
 
+        page_text_nodes = page.text_nodes
+
         field_nodes, tail_node = build_page_nodes(page, fields, tail_node, attachment_uuid: attachment&.uuid)
 
         fields = field_nodes.map do |node|
           field = node.elem
 
           type = regexp_type ? type_from_page_node(node) : field.type
-          name = name_from_adjacent_text(node) || ''
+          name = name_from_adjacent_text(node) ||
+                 name_from_nearby_text(field, page_text_nodes, page) ||
+                 ''
 
           {
             uuid: SecureRandom.uuid,
@@ -261,6 +265,87 @@ module Templates
       end
 
       nil
+    end
+
+    def name_from_nearby_text(field, text_nodes, page)
+      return nil if text_nodes.blank?
+
+      pw = page.width.to_f
+      ph = page.height.to_f
+
+      # Field position in normalized 0-1 coordinates
+      fx = field.x
+      fy = field.y
+      fw = field.w
+      fh = field.h
+
+      # Collect text nodes that are directly above the field (label position)
+      # Look within the field's horizontal span and up to 4% of page height above
+      label_margin_y = 0.04
+      label_chars = []
+
+      text_nodes.each do |tn|
+        # Convert text node coords (pixel space) to normalized 0-1 space
+        tx = tn.x / pw
+        ty = tn.y / ph
+        tx_end = tn.endx / pw
+        ty_end = tn.endy / ph
+
+        # Text must be above the field (ty_end <= fy + small overlap) and not too far above
+        next unless ty_end <= fy + 0.005 && ty_end >= fy - label_margin_y
+
+        # Text must horizontally overlap with the field area (with some tolerance)
+        next unless tx_end > fx - 0.01 && tx < fx + fw + 0.01
+
+        label_chars << { content: tn.content, x: tx, y: ty, endx: tx_end, endy: ty_end }
+      end
+
+      return nil if label_chars.empty?
+
+      # Sort by Y then X to reconstruct reading order
+      label_chars.sort_by! { |c| [c[:y].round(3), c[:x]] }
+
+      # Build label string, adding spaces between distant chars
+      label = ''.b
+      prev_char = nil
+
+      label_chars.each do |c|
+        next if c[:content] == '_'
+
+        if prev_char
+          if (c[:y] - prev_char[:y]).abs > 0.01
+            label << ' '
+          elsif (c[:x] - prev_char[:endx]) > 0.005
+            label << ' '
+          end
+        end
+
+        label << c[:content]
+        prev_char = c
+      end
+
+      text = MerchantFieldMapper.normalize_field_name(label)
+      return nil if text.blank?
+
+      best_score = 0
+      best_name = nil
+
+      MerchantFieldMapper::CANONICAL_FIELD_MAP.each do |search_terms, _data_path, _accessor|
+        search_terms.each do |term|
+          score = MerchantFieldMapper.match_score(text, term)
+
+          if score > best_score
+            best_score = score
+            best_name = search_terms.first.split(' ').map(&:capitalize).join(' ')
+          end
+        end
+      end
+
+      File.open('/tmp/detect_fields_debug.log', 'a') do |f|
+        f.puts "[NearbyText] field(#{fx.round(3)},#{fy.round(3)}) label=#{text.inspect} => #{best_name.inspect} score=#{best_score}"
+      end
+
+      best_score >= 0.5 ? best_name : nil
     end
 
     def build_page_nodes(page, fields, tail_node, attachment_uuid: nil)
