@@ -37,6 +37,13 @@ module Templates
 
       fields, annots_index = build_fields_with_pages(pdf)
 
+      File.open('/tmp/detect_fields_debug.log', 'a') do |f|
+        f.puts "\n[FindAcroFields] Processing #{fields.size} native PDF fields"
+        fields.each_with_index do |field, i|
+          f.puts "[FindAcroFields] field[#{i}] full_name=#{field.full_field_name.inspect} type=#{field.field_type.inspect} kids=#{(field[:Kids] || []).size}"
+        end
+      end
+
       fields.filter_map do |field|
         areas = Array.wrap(field[:Kids] || field).filter_map do |child_field|
           page = annots_index[child_field.hash]
