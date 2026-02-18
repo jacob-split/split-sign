@@ -231,6 +231,9 @@ module Templates
       candidates << segments.last if segments.any?
       candidates << raw if candidates.first != raw
 
+      field_info = node.elem.is_a?(String) ? 'text' : "field@page#{node.page}(#{node.elem.x.round(3)},#{node.elem.y.round(3)})"
+      Rails.logger.info "[DetectFields] #{field_info} | raw_prev=#{raw.inspect[0..200]} | segments=#{segments.inspect[0..200]}"
+
       candidates.each do |candidate|
         text = MerchantFieldMapper.normalize_field_name(candidate)
         next if text.blank?
@@ -249,6 +252,7 @@ module Templates
           end
         end
 
+        Rails.logger.info "[DetectFields]   candidate=#{text.inspect[0..100]} => best_name=#{best_name.inspect} score=#{best_score}"
         return best_name if best_score >= 0.5
       end
 
