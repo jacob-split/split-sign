@@ -235,11 +235,6 @@ module Templates
       candidates << segments.last if segments.any?
       candidates << raw if candidates.first != raw
 
-      field_info = node.elem.is_a?(String) ? 'text' : "field@page#{node.page}(#{node.elem.x.round(3)},#{node.elem.y.round(3)})"
-      File.open('/tmp/detect_fields_debug.log', 'a') do |f|
-        f.puts "[DetectFields] #{field_info} | raw_prev=#{raw.inspect[0..300]} | segments=#{segments.inspect[0..300]}"
-      end
-
       candidates.each do |candidate|
         text = MerchantFieldMapper.normalize_field_name(candidate)
         next if text.blank?
@@ -258,9 +253,6 @@ module Templates
           end
         end
 
-        File.open('/tmp/detect_fields_debug.log', 'a') do |f|
-          f.puts "[DetectFields]   candidate=#{text.inspect[0..150]} => best_name=#{best_name.inspect} score=#{best_score}"
-        end
         return best_name if best_score >= 0.5
       end
 
@@ -339,10 +331,6 @@ module Templates
             best_name = search_terms.first.split(' ').map(&:capitalize).join(' ')
           end
         end
-      end
-
-      File.open('/tmp/detect_fields_debug.log', 'a') do |f|
-        f.puts "[NearbyText] field(#{fx.round(3)},#{fy.round(3)}) label=#{text.inspect} => #{best_name.inspect} score=#{best_score}"
       end
 
       best_score >= 0.5 ? best_name : nil

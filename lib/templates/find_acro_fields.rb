@@ -4,7 +4,7 @@ module Templates
   module FindAcroFields
     PDF_CONTENT_TYPE = 'application/pdf'
 
-    FIELD_NAME_REGEXP = /\A(?=.*\p{L})[\p{L}\d\s-]+\z/
+    FIELD_NAME_REGEXP = /\A(?=.*\p{L})[\p{L}\d\s_-]+\z/
     SKIP_FIELD_DESCRIPTION = %w[undefined].freeze
     SELECT_PLACEHOLDER_REGEXP = /\b(
       Select      |
@@ -36,13 +36,6 @@ module Templates
       return [] if pdf.acro_form.blank? && data.exclude?('/Form')
 
       fields, annots_index = build_fields_with_pages(pdf)
-
-      File.open('/tmp/detect_fields_debug.log', 'a') do |f|
-        f.puts "\n[FindAcroFields] Processing #{fields.size} native PDF fields"
-        fields.each_with_index do |field, i|
-          f.puts "[FindAcroFields] field[#{i}] full_name=#{field.full_field_name.inspect} type=#{field.field_type.inspect} kids=#{(field[:Kids] || []).size}"
-        end
-      end
 
       fields.filter_map do |field|
         areas = Array.wrap(field[:Kids] || field).filter_map do |child_field|
@@ -135,6 +128,12 @@ module Templates
       field_name = field.full_field_name if field.full_field_name.to_s.match?(FIELD_NAME_REGEXP)
 
       field_name = field_name&.encode('utf-8', invalid: :replace, undef: :replace, replace: '')
+
+      # Clean up PDF field names: strip trailing _N suffixes and replace underscores with spaces
+      # e.g., "City_2" → "City", "First_Name" → "First Name"
+      if field_name.present?
+        field_name = field_name.sub(/_\d+\z/, '').gsub('_', ' ').strip
+      end
 
       attrs = { name: field_name.to_s }
       attrs[:description] = field[:TU] if field[:TU].present? &&
