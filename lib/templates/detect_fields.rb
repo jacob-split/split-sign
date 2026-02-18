@@ -221,24 +221,38 @@ module Templates
     def name_from_adjacent_text(node)
       return nil unless node.prev&.elem.is_a?(String)
 
-      text = MerchantFieldMapper.normalize_field_name(node.prev.elem)
-      return nil if text.blank?
+      raw = node.prev.elem
 
-      best_score = 0
-      best_name = nil
+      # Try the last text segment first (closest label to the field),
+      # then fall back to the full accumulated text if no match
+      segments = raw.split(/[\n\r\t]+/).map(&:strip).reject(&:empty?)
 
-      MerchantFieldMapper::CANONICAL_FIELD_MAP.each do |search_terms, _data_path, _accessor|
-        search_terms.each do |term|
-          score = MerchantFieldMapper.match_score(text, term)
+      candidates = []
+      candidates << segments.last if segments.any?
+      candidates << raw if candidates.first != raw
 
-          if score > best_score
-            best_score = score
-            best_name = search_terms.first.split(' ').map(&:capitalize).join(' ')
+      candidates.each do |candidate|
+        text = MerchantFieldMapper.normalize_field_name(candidate)
+        next if text.blank?
+
+        best_score = 0
+        best_name = nil
+
+        MerchantFieldMapper::CANONICAL_FIELD_MAP.each do |search_terms, _data_path, _accessor|
+          search_terms.each do |term|
+            score = MerchantFieldMapper.match_score(text, term)
+
+            if score > best_score
+              best_score = score
+              best_name = search_terms.first.split(' ').map(&:capitalize).join(' ')
+            end
           end
         end
+
+        return best_name if best_score >= 0.5
       end
 
-      best_score >= 0.5 ? best_name : nil
+      nil
     end
 
     def build_page_nodes(page, fields, tail_node, attachment_uuid: nil)
