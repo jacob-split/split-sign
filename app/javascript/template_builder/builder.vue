@@ -2129,19 +2129,31 @@ export default {
         return this.dropCustomField(area)
       }
 
-      const field = this.fieldsDragFieldRef.value || {
-        name: '',
-        uuid: v4(),
-        submitter_uuid: this.selectedSubmitter.uuid,
-        required: this.dragField.type !== 'checkbox',
-        ...this.dragField
+      let field = this.fieldsDragFieldRef.value
+      let isNewField = false
+
+      if (!field && this.dragField.name) {
+        field = this.template.fields?.find(
+          (f) => f.submitter_uuid === this.selectedSubmitter.uuid && f.name === this.dragField.name
+        )
+      }
+
+      if (!field) {
+        isNewField = true
+        field = {
+          name: '',
+          uuid: v4(),
+          submitter_uuid: this.selectedSubmitter.uuid,
+          required: this.dragField.type !== 'checkbox',
+          ...this.dragField
+        }
       }
 
       if (!field.type) {
         field.type = 'text'
       }
 
-      if (!this.fieldsDragFieldRef.value) {
+      if (isNewField) {
         if (['select', 'multiple', 'radio'].includes(field.type)) {
           if (this.dragField?.options?.length) {
             field.options = this.dragField.options.map(option => ({ value: option, uuid: v4() }))

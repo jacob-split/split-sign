@@ -105,13 +105,19 @@
                       {{ field.title || field.name }}
                     </span>
                   </div>
-                  <span
-                    v-if="defaultRequiredFields.includes(field)"
-                    :data-tip="t('required')"
-                    class="text-red-400 text-3xl pr-1.5 tooltip tooltip-left h-8"
-                  >
-                    *
-                  </span>
+                  <div class="flex items-center">
+                    <IconCheck
+                      v-if="usedFieldNames.has(field.name)"
+                      class="w-4 h-4 text-green-500 mr-0.5"
+                    />
+                    <span
+                      v-if="defaultRequiredFields.includes(field)"
+                      :data-tip="t('required')"
+                      class="text-red-400 text-3xl pr-1.5 tooltip tooltip-left h-8"
+                    >
+                      *
+                    </span>
+                  </div>
                 </div>
               </div>
             </template>
@@ -140,13 +146,19 @@
                 {{ field.title || field.name }}
               </span>
             </div>
-            <span
-              v-if="defaultRequiredFields.includes(field)"
-              :data-tip="t('required')"
-              class="text-red-400 text-3xl pr-1.5 tooltip tooltip-left h-8"
-            >
-              *
-            </span>
+            <div class="flex items-center">
+              <IconCheck
+                v-if="usedFieldNames.has(field.name)"
+                class="w-4 h-4 text-green-500 mr-0.5"
+              />
+              <span
+                v-if="defaultRequiredFields.includes(field)"
+                :data-tip="t('required')"
+                class="text-red-400 text-3xl pr-1.5 tooltip tooltip-left h-8"
+              >
+                *
+              </span>
+            </div>
           </div>
         </div>
       </template>
@@ -431,7 +443,7 @@ import Field from './field'
 import CustomField from './custom_field'
 import FieldType from './field_type'
 import FieldSubmitter from './field_submitter'
-import { IconLock, IconCirclePlus, IconInnerShadowTop, IconSparkles, IconChevronRight } from '@tabler/icons-vue'
+import { IconLock, IconCirclePlus, IconInnerShadowTop, IconSparkles, IconChevronRight, IconCheck } from '@tabler/icons-vue'
 import IconDrag from './icon_drag'
 import { v4 } from 'uuid'
 
@@ -447,7 +459,8 @@ export default {
     FieldSubmitter,
     IconDrag,
     IconLock,
-    IconChevronRight
+    IconChevronRight,
+    IconCheck
   },
   inject: ['save', 'backgroundColor', 'withPhone', 'withVerification', 'withKba', 'withPayment', 't', 'fieldsDragFieldRef', 'customDragFieldRef', 'baseFetch', 'selectedAreasRef', 'getFieldTypeIndex'],
   props: {
@@ -599,9 +612,12 @@ export default {
     submitterFields () {
       return this.fields.filter((f) => f.submitter_uuid === this.selectedSubmitter.uuid)
     },
+    usedFieldNames () {
+      return new Set(this.submitterFields.filter((f) => f.name).map((f) => f.name))
+    },
     submitterDefaultFields () {
       return this.defaultFields.filter((f) => {
-        return !this.submitterFields.find((field) => field.name === f.name) && (!f.role || f.role === this.selectedSubmitter.name)
+        return !f.role || f.role === this.selectedSubmitter.name
       })
     },
     filteredSubmitterDefaultFields () {
