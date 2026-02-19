@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class ApplicationMailer < ActionMailer::Base
-  default from: 'Split Signature <hello@split-llc.com>'
+  default from: 'Split Signature <signature@split-llc.com>'
   layout 'mailer'
 
   register_interceptor ActionMailerConfigsInterceptor

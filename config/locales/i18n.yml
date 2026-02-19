@@ -288,7 +288,7 @@ en: &en
   skip: Skip
   email_notifications: Email Notifications
   receive_notification_emails_on_completed_submission: Receive notification emails on completed submission
-  completed_documents_notification_bcc_address: Completed documents notification BCC address
+  completed_documents_notification_bcc_address: Completed documents notification BCC addresses
   sign_request_email_reminders: Sign Request Email Reminders
   send_automatic_email_reminders_to_your_recipients: Send automatic email reminders to your recipients.
   first_reminder_in: First reminder in
@@ -639,7 +639,7 @@ en: &en
   expire_on_time: 'Expire on %{time}'
   sign_in_person: Sign In-person
   create_a_new_template_document_form_or_submit_the_existing_one_html: <a href="%{new_template_link}" data-turbo-frame="modal" class="inline underline font-medium">Create a new template</a> document form or <a href="%{start_form_link}" target="_blank" class="inline underline font-medium">submit the existing one</a>
-  send_email_copy_with_completed_documents_to_a_specified_bcc_address: Send email copy with completed documents to a specified BCC address.
+  send_email_copy_with_completed_documents_to_a_specified_bcc_address: Send email copy with completed documents to the specified BCC addresses. Separate multiple addresses with commas.
   re_send_email: Re-send Email
   send_email: Send Email
   copy_share_link: Copy Share Link

@@ -11,7 +11,7 @@
         </span>
       </span>
     <% end %>
-    <%= tag.input type: 'email', multiple: true, name: 'account_config[value]', autocomplete: 'off', class: 'base-input', value: f.object.value %>
+    <%= tag.input type: 'text', name: 'account_config[value]', autocomplete: 'off', class: 'base-input', placeholder: 'name@example.com, team@example.com', value: f.object.value %>
   </div>
   <div class="form-control pt-2">
     <%= f.button button_title(title: t('save'), disabled_with: t('updating')), class: 'base-button' %>
