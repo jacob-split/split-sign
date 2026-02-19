@@ -24,7 +24,7 @@
       :submitters="submitters"
       :editable="editable"
       :mobile-view="true"
-      :menu-style="{ backgroundColor: ['', null, 'transparent'].includes(backgroundColor) ? 'white' : backgroundColor }"
+      :menu-style="{ backgroundColor: ['', null, 'transparent'].includes(backgroundColor) ? 'var(--builder-bg, white)' : backgroundColor }"
       @new-submitter="save"
       @remove="removeSubmitter"
       @name-change="save"

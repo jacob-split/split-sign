@@ -398,7 +398,7 @@ export default {
     fieldNames: FieldType.computed.fieldNames,
     fieldLabels: FieldType.computed.fieldLabels,
     dropdownBgColor () {
-      return ['', null, 'transparent'].includes(this.backgroundColor) ? 'white' : this.backgroundColor
+      return ['', null, 'transparent'].includes(this.backgroundColor) ? 'var(--builder-bg, white)' : this.backgroundColor
     },
     schemaAttachmentsIndexes () {
       return (this.template.schema || []).reduce((acc, item, index) => {

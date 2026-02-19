@@ -215,7 +215,7 @@ export default {
   },
   computed: {
     dropdownBgColor () {
-      return ['', null, 'transparent'].includes(this.backgroundColor) ? 'white' : this.backgroundColor
+      return ['', null, 'transparent'].includes(this.backgroundColor) ? 'var(--builder-bg, white)' : this.backgroundColor
     },
     modalContainerEl () {
       return this.$el.getRootNode().querySelector('#docuseal_modal_container')
