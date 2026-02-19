@@ -1,3 +1,11 @@
+<script>
+(function(){
+  var p = localStorage.getItem('split-theme-preference') || 'system';
+  var t = p === 'dark' ? 'split-dark' : p === 'light' ? 'split' :
+    (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'split-dark' : 'split');
+  document.documentElement.setAttribute('data-theme', t);
+})();
+</script>
 <title>
   <%= content_for(:html_title) || (signed_in? ? 'Split Signature' : 'Split Signature | Professional Document Signing') %>
 </title>

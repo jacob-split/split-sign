@@ -19,6 +19,22 @@ module.exports = {
           '--tab-border': '1px',
           '--tab-radius': '4px'
         }
+      },
+      {
+        'split-dark': {
+          'color-scheme': 'dark',
+          primary: '#ffffff',
+          secondary: '#dddddd',
+          accent: '#FF4306',
+          neutral: '#2a2a2a',
+          'base-100': '#1a1a1a',
+          'base-200': '#222222',
+          'base-300': '#333333',
+          'base-content': '#e5e5e5',
+          '--rounded-btn': '9999px',
+          '--tab-border': '1px',
+          '--tab-radius': '4px'
+        }
       }
     ]
   }

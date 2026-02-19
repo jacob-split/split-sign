@@ -19,11 +19,17 @@
       <% else %>
         <div class="flex items-center justify-center space-x-4 mr-1">
           <%= render 'shared/navbar_buttons' %>
-          <% if can?(:create, Submission) && respond_to?(:new_merchant_submission_path) %>
-            <%= link_to new_merchant_submission_path, class: 'hidden md:inline-flex font-medium text-lg', data: { turbo: false } do %>
-              Merchants
-            <% end %>
-          <% end %>
+          <theme-switcher class="hidden md:inline-flex items-center bg-base-300 rounded-full p-0.5">
+            <button data-theme-mode="light" class="rounded-full p-1.5 transition-colors" aria-label="Light mode">
+              <%= render 'icons/sun', class: 'w-4 h-4' %>
+            </button>
+            <button data-theme-mode="system" class="rounded-full p-1.5 transition-colors" aria-label="System mode">
+              <%= render 'icons/device_desktop', class: 'w-4 h-4' %>
+            </button>
+            <button data-theme-mode="dark" class="rounded-full p-1.5 transition-colors" aria-label="Dark mode">
+              <%= render 'icons/moon', class: 'w-4 h-4' %>
+            </button>
+          </theme-switcher>
           <%= link_to t('settings'), settings_profile_index_path, class: 'hidden md:inline-flex font-medium text-lg', id: 'account_settings_button' %>
         </div>
       <% end %>

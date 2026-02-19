@@ -56,6 +56,7 @@ import FieldCondition from './elements/field_condition'
 import MerchantSubmission from './elements/merchant_submission'
 import MerchantSearch from './elements/merchant_search'
 import CompanyPrincipalSelect from './elements/company_principal_select'
+import ThemeSwitcher from './elements/theme_switcher'
 
 import * as TurboInstantClick from './lib/turbo_instant_click'
 
@@ -150,6 +151,7 @@ safeRegisterElement('field-condition', FieldCondition)
 safeRegisterElement('merchant-submission', MerchantSubmission)
 safeRegisterElement('merchant-search', MerchantSearch)
 safeRegisterElement('company-principal-select', CompanyPrincipalSelect)
+safeRegisterElement('theme-switcher', ThemeSwitcher)
 
 safeRegisterElement('template-builder', class extends HTMLElement {
   connectedCallback () {
