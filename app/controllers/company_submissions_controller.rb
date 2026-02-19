@@ -56,13 +56,6 @@ class CompanySubmissionsController < ApplicationController
     Submissions.send_signature_requests(submissions)
     SearchEntries.enqueue_reindex(submissions)
 
-    # Set only_required_fields preference on each submitter
-    submissions.each do |submission|
-      submission.submitters.each do |submitter|
-        submitter.update_column(:preferences, submitter.preferences.merge('only_required_fields' => true))
-      end
-    end
-
     # Save field mappings for this template so subsequent sends use verified mappings
     save_company_field_mappings(template, data_paths) if data_paths.present?
 

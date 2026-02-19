@@ -140,8 +140,6 @@ class MerchantSubmissionsController < ApplicationController
     submitter = submissions.first&.submitters&.first
 
     if submitter
-      # Skip pre-filled fields in the signing form — Continue jumps to empty required fields only
-      submitter.update_column(:preferences, submitter.preferences.merge('only_required_fields' => true))
       # Write to Supabase merchant_documents
       SupabaseClient.insert_merchant_document({
         merchant_id: merchant_id,
