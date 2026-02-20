@@ -16,8 +16,9 @@ Rails.application.routes.draw do
   get 'docs/api' => 'api_docs#show'
   get 'docs/openapi.json' => 'api_docs#openapi'
 
-  devise_for :users, path: '/', only: %i[sessions passwords],
-                     controllers: { sessions: 'sessions', passwords: 'passwords' }
+  devise_for :users, path: '/', only: %i[sessions passwords omniauth_callbacks],
+                     controllers: { sessions: 'sessions', passwords: 'passwords',
+                                    omniauth_callbacks: 'omniauth_callbacks' }
 
   devise_scope :user do
     resource :invitation, only: %i[update] do
