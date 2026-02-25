@@ -75,61 +75,78 @@ class MerchantSubmissionsController < ApplicationController
     field_values = params[:field_values]&.to_unsafe_h || {}
     agent_only_fields = params[:agent_only_fields] || []
     data_paths = params[:data_paths]&.to_unsafe_h || {}
-    merchant_email = params[:merchant_email]
-    merchant_name = params[:merchant_name]
     merchant_id = params[:merchant_id]
 
-    Rails.logger.info("[MerchantSubmissions] Creating for merchant=#{merchant_name}, " \
-                      "field_values_count=#{field_values.size}, " \
-                      "non_empty=#{field_values.count { |_, v| v.present? }}")
+    submitter_params = (params[:submitters]&.to_unsafe_h || {}).sort_by { |k, _| k.to_i }.map(&:last)
 
-    # Build fields array with name-based default values.
-    # Portal-mapped fields (those in data_paths) are marked required — the merchant must
-    # confirm each value. Non-mapped fields keep their template defaults.
-    # We do NOT mark fields as readonly because readonly fields are hidden from the
-    # signing form entirely.
-    fields = field_values.map do |field_name, value|
-      entry = { 'name' => field_name, 'default_value' => value }
-      entry['required'] = true if data_paths.key?(field_name)
-      entry
-    end
-
-    # Ensure signature and initials fields are also required so merchants can't skip signing
-    template.fields.each do |f|
-      next unless %w[signature initials date].include?(f['type'])
-      next if fields.any? { |e| e['name'] == f['name'] }
-
-      fields << { 'name' => f['name'], 'required' => true }
-    end
-
-    # Build UUID-keyed values hash so submitter.values gets populated
-    # (the signing form and dashboard both read from submitter.values)
+    # Group template fields by submitter_uuid for splitting values per role
     fields_by_name = template.fields.index_by { |f| f['name'] }
-    submitter_values = {}
-    field_values.each do |field_name, value|
-      field = fields_by_name[field_name]
-      submitter_values[field['uuid']] = value if field && value.present?
+    fields_by_submitter = template.fields.group_by { |f| f['submitter_uuid'] }
+
+    submitters_list = submitter_params.map.with_index do |sp, idx|
+      role_uuid = sp['uuid']
+      role = template.submitters.find { |s| s['uuid'] == role_uuid }
+      role_fields = fields_by_submitter[role_uuid] || []
+      role_field_names = role_fields.map { |f| f['name'] }.to_set
+
+      # Filter field_values to only fields belonging to this role
+      role_values = field_values.select { |name, _| role_field_names.include?(name) }
+
+      # Build fields array with pre-filled values (only for the merchant's role — index 0)
+      fields = if idx == 0
+                 entries = role_values.map do |field_name, value|
+                   entry = { 'name' => field_name, 'default_value' => value }
+                   entry['required'] = true if data_paths.key?(field_name)
+                   entry
+                 end
+
+                 # Ensure signature/initials/date fields are required
+                 role_fields.each do |f|
+                   next unless %w[signature initials date].include?(f['type'])
+                   next if entries.any? { |e| e['name'] == f['name'] }
+
+                   entries << { 'name' => f['name'], 'required' => true }
+                 end
+
+                 entries
+               else
+                 # Non-merchant roles: just ensure signature/initials/date are required
+                 role_fields.select { |f| %w[signature initials date].include?(f['type']) }
+                            .map { |f| { 'name' => f['name'], 'required' => true } }
+               end
+
+      # Build UUID-keyed submitter_values (only for merchant's role)
+      submitter_values = {}
+      if idx == 0
+        role_values.each do |field_name, value|
+          field = fields_by_name[field_name]
+          submitter_values[field['uuid']] = value if field && value.present?
+        end
+      end
+
+      attrs = {
+        email: sp['email'],
+        name: sp['name'],
+        role: role&.dig('name'),
+        fields: fields,
+        values: submitter_values
+      }
+      attrs[:metadata] = { 'merchant_id' => merchant_id } if idx == 0
+
+      attrs.with_indifferent_access
     end
 
-    submitter_role = template.submitters.first['name']
+    submitters_order = params[:preserve_order] == '1' ? 'preserved' : 'random'
 
-    submissions_attrs = [{
-      submitters: [{
-        email: merchant_email,
-        name: merchant_name,
-        role: submitter_role,
-        fields: fields,
-        values: submitter_values,
-        metadata: { 'merchant_id' => merchant_id }
-      }.with_indifferent_access]
-    }]
+    Rails.logger.info("[MerchantSubmissions] Creating for merchant_id=#{merchant_id}, " \
+                      "submitters=#{submitters_list.size}, order=#{submitters_order}")
 
     submissions = Submissions.create_from_submitters(
       template: template,
       user: current_user,
       source: :invite,
-      submitters_order: 'random',
-      submissions_attrs: submissions_attrs,
+      submitters_order: submitters_order,
+      submissions_attrs: [{ submitters: submitters_list }],
       params: { 'send_email' => params[:send_email] != '0', 'send_completed_email' => true }
     )
 
@@ -153,8 +170,12 @@ class MerchantSubmissionsController < ApplicationController
 
       # Save field mappings for this template (so next send auto-fills the same way)
       save_field_mappings(template, data_paths, agent_only_fields) if data_paths.present?
+
+      # Set only_required_fields preference on the merchant submitter (index 0)
+      submitter.update!(preferences: submitter.preferences.merge('only_required_fields' => true))
     end
 
+    merchant_name = submitter_params.first&.dig('name') || params[:merchant_name]
     redirect_to template_path(template), notice: "Sent to #{merchant_name} for signature"
   rescue Submissions::CreateFromSubmitters::BaseError => e
     redirect_to new_merchant_submission_path(template_id: params[:template_id]),

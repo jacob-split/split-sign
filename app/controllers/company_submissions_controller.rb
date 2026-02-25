@@ -21,34 +21,66 @@ class CompanySubmissionsController < ApplicationController
     template = current_account.templates.find(params[:template_id])
     field_values = params[:field_values]&.to_unsafe_h || {}
     data_paths = params[:data_paths]&.to_unsafe_h || {}
-    principal_ids = Array(params[:principal_ids])
 
-    company_info = load_company_info
-    all_principals = load_principals
-    principals = principal_ids.filter_map { |id| all_principals.find { |p| p['id'] == id } }
+    submitter_params = (params[:submitters]&.to_unsafe_h || {}).sort_by { |k, _| k.to_i }.map(&:last)
 
-    if principals.empty?
-      redirect_to template_path(template), alert: 'No valid principals selected'
+    if submitter_params.empty? || submitter_params.all? { |sp| sp['email'].blank? }
+      redirect_to template_path(template), alert: 'No valid recipients provided'
       return
     end
 
-    submitter_roles = template.submitters.map { |s| s['name'] }
+    # Group template fields by submitter_uuid for splitting values per role
     fields_by_name = template.fields.index_by { |f| f['name'] }
+    fields_by_submitter = template.fields.group_by { |f| f['submitter_uuid'] }
 
-    submissions_attrs = if principals.size == 1 || submitter_roles.size == 1
-                          build_single_signer_attrs(template, principals.first, company_info,
-                                                    field_values, data_paths, fields_by_name, submitter_roles.first)
-                        else
-                          build_multi_signer_attrs(template, principals, company_info,
-                                                   fields_by_name, submitter_roles)
-                        end
+    submitters_list = submitter_params.map.with_index do |sp, idx|
+      role_uuid = sp['uuid']
+      role = template.submitters.find { |s| s['uuid'] == role_uuid }
+      role_fields = fields_by_submitter[role_uuid] || []
+      role_field_names = role_fields.map { |f| f['name'] }.to_set
+
+      # Filter field_values to only fields belonging to this role
+      role_values = field_values.select { |name, _| role_field_names.include?(name) }
+
+      # Build fields array with pre-filled values
+      entries = role_values.map do |field_name, value|
+        entry = { 'name' => field_name, 'default_value' => value }
+        entry['required'] = true if data_paths.key?(field_name)
+        entry
+      end
+
+      # Ensure signature/initials/date fields are required
+      role_fields.each do |f|
+        next unless %w[signature initials date].include?(f['type'])
+        next if entries.any? { |e| e['name'] == f['name'] }
+
+        entries << { 'name' => f['name'], 'required' => true }
+      end
+
+      # Build UUID-keyed submitter_values
+      submitter_values = {}
+      role_values.each do |field_name, value|
+        field = fields_by_name[field_name]
+        submitter_values[field['uuid']] = value if field && value.present?
+      end
+
+      {
+        email: sp['email'],
+        name: sp['name'],
+        role: role&.dig('name'),
+        fields: entries,
+        values: submitter_values
+      }.with_indifferent_access
+    end
+
+    submitters_order = params[:preserve_order] == '1' ? 'preserved' : 'random'
 
     submissions = Submissions.create_from_submitters(
       template: template,
       user: current_user,
       source: :invite,
-      submitters_order: submitter_roles.size > 1 ? 'preserved' : 'random',
-      submissions_attrs: submissions_attrs,
+      submitters_order: submitters_order,
+      submissions_attrs: [{ submitters: submitters_list }],
       params: { 'send_email' => params[:send_email] != '0', 'send_completed_email' => true }
     )
 
@@ -59,94 +91,13 @@ class CompanySubmissionsController < ApplicationController
     # Save field mappings for this template so subsequent sends use verified mappings
     save_company_field_mappings(template, data_paths) if data_paths.present?
 
-    principal_names = principals.map { |p| "#{p['first_name']} #{p['last_name']}".strip }.join(' & ')
-    redirect_to template_path(template), notice: "Sent to #{principal_names} for signature"
+    recipient_names = submitter_params.map { |sp| sp['name'] }.compact_blank.join(' & ')
+    redirect_to template_path(template), notice: "Sent to #{recipient_names} for signature"
   rescue Submissions::CreateFromSubmitters::BaseError => e
     redirect_to template_path(params[:template_id]), alert: "Error creating submission: #{e.message}"
   end
 
   private
-
-  def build_single_signer_attrs(template, principal, company_info, field_values, data_paths, fields_by_name, role)
-    # Build fields array with pre-filled values
-    fields = field_values.map do |field_name, value|
-      entry = { 'name' => field_name, 'default_value' => value }
-      entry['required'] = true if data_paths.key?(field_name)
-      entry
-    end
-
-    # Ensure signature/initials/date fields are required
-    template.fields.each do |f|
-      next unless %w[signature initials date].include?(f['type'])
-      next if fields.any? { |e| e['name'] == f['name'] }
-
-      fields << { 'name' => f['name'], 'required' => true }
-    end
-
-    # Build UUID-keyed submitter_values
-    submitter_values = {}
-    field_values.each do |field_name, value|
-      field = fields_by_name[field_name]
-      submitter_values[field['uuid']] = value if field && value.present?
-    end
-
-    [{
-      submitters: [{
-        email: principal['email'],
-        name: "#{principal['first_name']} #{principal['last_name']}".strip,
-        role: role,
-        fields: fields,
-        values: submitter_values
-      }.with_indifferent_access]
-    }]
-  end
-
-  def build_multi_signer_attrs(template, principals, company_info, fields_by_name, submitter_roles)
-    template_fields = template.fields.map { |f| { 'name' => f['name'], 'type' => f['type'] } }
-    saved_mappings = load_company_field_mappings(template.id)
-
-    submitters = []
-    principals.each_with_index do |principal, idx|
-      role = submitter_roles[idx] || submitter_roles.last
-
-      # Run field mapping for each principal, using saved mappings if available
-      result = MerchantFieldMapper.get_field_map_for_template(
-        template.id, company_info, principal, template_fields, saved_mappings
-      )
-
-      # Build fields array
-      fields = result[:values].map do |field_name, value|
-        entry = { 'name' => field_name, 'default_value' => value }
-        entry['required'] = true if result[:data_paths].key?(field_name)
-        entry
-      end
-
-      # Ensure signature/initials/date are required
-      template.fields.each do |f|
-        next unless %w[signature initials date].include?(f['type'])
-        next if fields.any? { |e| e['name'] == f['name'] }
-
-        fields << { 'name' => f['name'], 'required' => true }
-      end
-
-      # Build UUID-keyed values
-      submitter_values = {}
-      result[:values].each do |field_name, value|
-        field = fields_by_name[field_name]
-        submitter_values[field['uuid']] = value if field && value.present?
-      end
-
-      submitters << {
-        email: principal['email'],
-        name: "#{principal['first_name']} #{principal['last_name']}".strip,
-        role: role,
-        fields: fields,
-        values: submitter_values
-      }.with_indifferent_access
-    end
-
-    [{ submitters: submitters }]
-  end
 
   def load_company_info
     current_account.encrypted_configs

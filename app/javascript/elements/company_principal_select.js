@@ -55,13 +55,15 @@ export default class extends HTMLElement {
       })
       html += '</div>'
     } else {
+      const roleNames = JSON.parse(this.dataset.submitterNames || '[]')
       html += '<p class="text-sm opacity-60 mb-2">This template has ' + submitterCount + ' signer roles. Assign a principal to each role.</p>'
       html += '<div class="space-y-3" id="company-role-assignments">'
 
       for (let i = 0; i < submitterCount; i++) {
+        const roleName = roleNames[i] || `Signer ${i + 1}`
         html += `
           <div class="form-control">
-            <label class="label"><span class="label-text font-semibold">Signer ${i + 1}</span></label>
+            <label class="label"><span class="label-text font-semibold">${roleName}</span></label>
             <select name="company_principal_${i}" class="select select-bordered w-full" data-role-index="${i}">
               <option value="">-- Select principal --</option>
               ${this.principals.map(p => `<option value="${p.id}">${p.first_name} ${p.last_name} (${p.email})</option>`).join('')}

@@ -43,7 +43,8 @@
       <company-principal-select
         data-list-url="<%= list_principals_company_submissions_path %>"
         data-redirect-url="<%= company_send_template_path(@template) %>"
-        data-submitter-count="<%= @template.submitters.size %>">
+        data-submitter-count="<%= @template.submitters.size %>"
+        data-submitter-names="<%= @template.submitters.map { |s| s['name'] }.to_json %>">
       </company-principal-select>
     </div>
     <%= render 'submissions/error' %>
