@@ -131,7 +131,11 @@ class MerchantSubmissionsController < ApplicationController
         fields: fields,
         values: submitter_values
       }
-      attrs[:metadata] = { 'merchant_id' => merchant_id } if idx == 0
+      if idx == 0
+        metadata = { 'merchant_id' => merchant_id }
+        metadata['provider_mid'] = merchant['provider_mid'] if merchant['provider_mid'].present?
+        attrs[:metadata] = metadata
+      end
 
       attrs.with_indifferent_access
     end
