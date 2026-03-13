@@ -235,7 +235,7 @@ export default {
 
       const query = new URLSearchParams(params).toString()
 
-      return `/auth/google_oauth2?${query}`
+      return `/users/auth/google_oauth2?${query}`
     },
     modalContainerEl () {
       return this.$el.getRootNode().querySelector('#docuseal_modal_container')
