@@ -84,8 +84,10 @@ module MerchantPortalDocumentSync
     }).first
 
     portal_url = merchant_portal_url(document&.dig('id') || submitter.submission_id)
-    preferences = submitter.preferences.merge('portal_signing_url' => portal_url)
-    preferences.delete('only_required_fields')
+    preferences = submitter.preferences.merge(
+      'only_required_fields' => false,
+      'portal_signing_url' => portal_url
+    )
 
     submitter.update!(
       metadata: submitter.metadata.merge(submitter_metadata(context)).compact,
