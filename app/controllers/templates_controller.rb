@@ -176,11 +176,14 @@ class TemplatesController < ApplicationController
   def destroy
     notice =
       if params[:permanently].in?(['true', true])
+        MerchantPortalDocumentSync.archive_template(@template)
+
         @template.destroy!
 
         I18n.t('template_has_been_removed')
       else
         @template.update!(archived_at: Time.current)
+        MerchantPortalDocumentSync.archive_template(@template, archived_at: @template.archived_at)
 
         I18n.t('template_has_been_archived')
       end

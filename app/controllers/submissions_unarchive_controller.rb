@@ -5,6 +5,7 @@ class SubmissionsUnarchiveController < ApplicationController
 
   def create
     @submission.update!(archived_at: nil)
+    MerchantPortalDocumentSync.sync_submissions([@submission], template: @submission.template)
 
     redirect_to submission_path(@submission), notice: I18n.t('submission_has_been_unarchived')
   end

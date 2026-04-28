@@ -69,7 +69,7 @@ module SupabaseClient
       'limit' => '1'
     })
 
-    body = attrs.compact
+    body = attrs.compact.merge(updated_at: Time.current.iso8601)
     if existing.any?
       patch('/rest/v1/merchant_documents', body, { 'id' => "eq.#{existing.first['id']}" })
     else
@@ -82,7 +82,29 @@ module SupabaseClient
   end
 
   def update_merchant_document(submission_id, attrs)
-    patch('/rest/v1/merchant_documents', attrs, { 'submission_id' => "eq.#{submission_id}" })
+    patch('/rest/v1/merchant_documents', attrs.compact.merge(updated_at: Time.current.iso8601),
+          { 'submission_id' => "eq.#{submission_id}" })
+  end
+
+  def archive_merchant_document(submission_id, archived_at: Time.current)
+    update_merchant_document(submission_id, {
+      status: 'archived',
+      archived_at: archived_at&.iso8601
+    })
+  end
+
+  def archive_merchant_documents_for_template(template_id, archived_at: Time.current)
+    patch('/rest/v1/merchant_documents', {
+      archived_at: archived_at&.iso8601,
+      updated_at: Time.current.iso8601
+    }, { 'template_id' => "eq.#{template_id}", 'archived_at' => 'is.null' })
+  end
+
+  def unarchive_merchant_documents_for_template(template_id)
+    patch('/rest/v1/merchant_documents', {
+      archived_at: nil,
+      updated_at: Time.current.iso8601
+    }, { 'template_id' => "eq.#{template_id}" })
   end
 
   def upsert_template_field_mappings(template_id, data_paths, agent_only_fields = [], template_name: nil)
@@ -113,6 +135,7 @@ module SupabaseClient
   def fetch_merchant_documents(merchant_id)
     get('/rest/v1/merchant_documents', {
       'merchant_id' => "eq.#{merchant_id}",
+      'archived_at' => 'is.null',
       'select' => '*',
       'order' => 'created_at.asc'
     })

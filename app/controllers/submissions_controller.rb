@@ -83,11 +83,15 @@ class SubmissionsController < ApplicationController
   def destroy
     notice =
       if params[:permanently].in?(['true', true])
+        MerchantPortalDocumentSync.archive_submission(@submission)
+
         @submission.destroy!
 
         I18n.t('submission_has_been_removed')
       else
         @submission.update!(archived_at: Time.current)
+
+        MerchantPortalDocumentSync.archive_submission(@submission, archived_at: @submission.archived_at)
 
         WebhookUrls.enqueue_events(@submission, 'submission.archived')
 

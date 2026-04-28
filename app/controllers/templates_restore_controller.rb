@@ -5,6 +5,7 @@ class TemplatesRestoreController < ApplicationController
 
   def create
     @template.update!(archived_at: nil)
+    MerchantPortalDocumentSync.unarchive_template(@template)
 
     redirect_to template_path(@template), notice: I18n.t('template_has_been_unarchived')
   end

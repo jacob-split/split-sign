@@ -148,6 +148,11 @@ module Api
       end
 
       @template.update!(update_params)
+      if archived == true
+        MerchantPortalDocumentSync.archive_template(@template, archived_at: @template.archived_at)
+      elsif archived == false
+        MerchantPortalDocumentSync.unarchive_template(@template)
+      end
 
       ensure_submitter_uuids(@template)
 
@@ -160,9 +165,12 @@ module Api
 
     def destroy
       if params[:permanently].in?(['true', true])
+        MerchantPortalDocumentSync.archive_template(@template)
+
         @template.destroy!
       else
         @template.update!(archived_at: Time.current)
+        MerchantPortalDocumentSync.archive_template(@template, archived_at: @template.archived_at)
       end
 
       render json: @template.as_json(only: %i[id archived_at])

@@ -24,6 +24,24 @@ module MerchantPortalDocumentSync
     submitter.preferences['portal_signing_url'].presence
   end
 
+  def archive_submission(submission, archived_at: Time.current)
+    SupabaseClient.archive_merchant_document(submission.id, archived_at:)
+  rescue SupabaseClient::Error => e
+    Rails.logger.warn("[MerchantPortalDocumentSync] Supabase archive sync failed: #{e.message}")
+  end
+
+  def archive_template(template, archived_at: Time.current)
+    SupabaseClient.archive_merchant_documents_for_template(template.id, archived_at:)
+  rescue SupabaseClient::Error => e
+    Rails.logger.warn("[MerchantPortalDocumentSync] Supabase template archive sync failed: #{e.message}")
+  end
+
+  def unarchive_template(template)
+    SupabaseClient.unarchive_merchant_documents_for_template(template.id)
+  rescue SupabaseClient::Error => e
+    Rails.logger.warn("[MerchantPortalDocumentSync] Supabase template restore sync failed: #{e.message}")
+  end
+
   def build_context(template, merchant_id: nil, template_name: nil)
     generated_context = SupabaseClient.find_generated_docuseal_artifact(template.id) || {}
     {
@@ -59,16 +77,19 @@ module MerchantPortalDocumentSync
       template_name: context[:template_name],
       submission_id: submitter.submission_id,
       embed_src: "#{Docuseal::CONSOLE_URL}/s/#{submitter.slug}",
+      signed_at: submitter.completed_at&.iso8601,
+      status: submitter.completed_at? ? 'signed' : 'pending',
+      archived_at: submission.archived_at&.iso8601,
       sort_order: context[:sort_order]
     }).first
 
     portal_url = merchant_portal_url(document&.dig('id') || submitter.submission_id)
+    preferences = submitter.preferences.merge('portal_signing_url' => portal_url)
+    preferences.delete('only_required_fields')
+
     submitter.update!(
       metadata: submitter.metadata.merge(submitter_metadata(context)).compact,
-      preferences: submitter.preferences.merge(
-        'only_required_fields' => true,
-        'portal_signing_url' => portal_url
-      )
+      preferences:
     )
 
     document

@@ -169,8 +169,7 @@ class MerchantSubmissionsController < ApplicationController
       # Save field mappings for this template (so next send auto-fills the same way)
       save_field_mappings(template, data_paths, agent_only_fields) if data_paths.present?
 
-      # Set only_required_fields preference on the merchant submitter (index 0)
-      submitter.update!(preferences: submitter.preferences.merge('only_required_fields' => true))
+      submitter.update!(preferences: submitter.preferences.except('only_required_fields'))
     end
 
     merchant_name = submitter_params.first&.dig('name') || params[:merchant_name]

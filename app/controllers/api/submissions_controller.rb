@@ -206,9 +206,13 @@ module Api
 
     def destroy
       if params[:permanently].in?(['true', true])
+        MerchantPortalDocumentSync.archive_submission(@submission)
+
         @submission.destroy!
       else
         @submission.update!(archived_at: Time.current)
+
+        MerchantPortalDocumentSync.archive_submission(@submission, archived_at: @submission.archived_at)
 
         WebhookUrls.enqueue_events(@submission, 'submission.archived')
       end
