@@ -5,6 +5,7 @@ class SubmitFormController < ApplicationController
 
   around_action :with_browser_locale, only: %i[show completed success]
   skip_before_action :authenticate_user!
+  skip_before_action :verify_authenticity_token, only: :update, if: :trusted_portal_signing_origin?
   skip_authorization_check
 
   before_action :load_submitter, only: %i[show update completed]
@@ -90,6 +91,19 @@ class SubmitFormController < ApplicationController
   def success; end
 
   private
+
+  def trusted_portal_signing_origin?
+    origin = request.origin.to_s
+
+    return false if origin.blank?
+
+    allowed_origins = ENV.fetch(
+      'PORTAL_SIGNING_ORIGINS',
+      'https://www.split-llc.com,https://split-llc.com,https://www.ccsplit.org,https://ccsplit.org'
+    ).split(',').map(&:strip).reject(&:blank?)
+
+    allowed_origins.include?(origin)
+  end
 
   def maybe_require_link_2fa
     return if @submitter.submission.source != 'link'
