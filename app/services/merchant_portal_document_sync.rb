@@ -78,7 +78,7 @@ module MerchantPortalDocumentSync
       submission_id: submitter.submission_id,
       embed_src: "#{Docuseal::CONSOLE_URL}/s/#{submitter.slug}",
       signed_at: submitter.completed_at&.iso8601,
-      status: submitter.completed_at? ? 'signed' : 'pending',
+      status: submission.archived_at? ? 'archived' : (submitter.completed_at? ? 'signed' : 'pending'),
       archived_at: submission.archived_at&.iso8601,
       sort_order: context[:sort_order]
     }).first
