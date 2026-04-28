@@ -33,6 +33,7 @@ module Submitters
                       'values' => values,
                       'documents' => documents,
                       'audit_log_url' => submitter.submission.audit_log_url(expires_at:),
+                      'embed_src' => r.submit_form_url(slug: submitter.slug, **Docuseal.default_url_options),
                       'submission_url' => r.submissions_preview_url(submission.slug, **Docuseal.default_url_options),
                       'template' => submission.template.as_json(
                         only: %i[id name external_id created_at updated_at], methods: %i[folder_name]

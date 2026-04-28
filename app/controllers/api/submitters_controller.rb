@@ -31,7 +31,8 @@ module Api
     def show
       Submissions::EnsureResultGenerated.call(@submitter) if @submitter.completed_at?
 
-      render json: Submitters::SerializeForApi.call(@submitter, with_template: true, with_events: true, params:)
+      render json: Submitters::SerializeForApi.call(@submitter, with_template: true, with_events: true,
+                                                                with_urls: true, params:)
     end
 
     def update
