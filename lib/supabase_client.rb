@@ -56,6 +56,27 @@ module SupabaseClient
     post('/rest/v1/merchant_documents', attrs)
   end
 
+  def upsert_merchant_document(attrs)
+    merchant_id = attrs[:merchant_id] || attrs['merchant_id']
+    template_id = attrs[:template_id] || attrs['template_id']
+    raise Error, 'merchant_id is required' if merchant_id.blank?
+    raise Error, 'template_id is required' if template_id.blank?
+
+    existing = get('/rest/v1/merchant_documents', {
+      'merchant_id' => "eq.#{merchant_id}",
+      'template_id' => "eq.#{template_id}",
+      'select' => 'id',
+      'limit' => '1'
+    })
+
+    body = attrs.compact
+    if existing.any?
+      patch('/rest/v1/merchant_documents', body, { 'id' => "eq.#{existing.first['id']}" })
+    else
+      post('/rest/v1/merchant_documents', body)
+    end
+  end
+
   def update_merchant(id, attrs)
     patch("/rest/v1/merchants", attrs, { 'id' => "eq.#{id}" })
   end
@@ -95,6 +116,58 @@ module SupabaseClient
       'select' => '*',
       'order' => 'created_at.asc'
     })
+  end
+
+  def find_generated_docuseal_artifact(template_id)
+    rows = get('/rest/v1/merchant_sync_events', {
+      'select' => 'merchant_identity_id,supabase_merchant_id,payload,created_at,event_type',
+      'event_type' => 'eq.docuseal_artifacts_generated',
+      'order' => 'created_at.desc',
+      'limit' => '300'
+    })
+
+    rows.each do |row|
+      payload = row['payload'] || {}
+      artifacts = payload['docuseal_artifacts'] || []
+      artifacts.each_with_index do |artifact, index|
+        next unless artifact['template_id'].to_s == template_id.to_s
+
+        return {
+          merchant_id: row['supabase_merchant_id'] || payload['supabase_merchant_id'],
+          merchant_identity_id: row['merchant_identity_id'] || payload['merchant_identity_id'],
+          attio_company_id: payload['attio_company_id'],
+          attio_person_id: payload['attio_person_id'],
+          template_name: artifact['master_template'] || payload['docuseal_template_name'],
+          sort_order: index,
+          artifact: artifact
+        }.compact
+      end
+    end
+
+    nil
+  end
+
+  def find_merchant_for_document_context(email: nil, name: nil)
+    if email.present?
+      rows = get('/rest/v1/merchants', {
+        'or' => "(email.eq.#{email},business_email.eq.#{email})",
+        'select' => 'id,business_name,dba_name,email,business_email',
+        'limit' => '2'
+      })
+      return rows.first if rows.any?
+    end
+
+    if name.present?
+      pattern = "%#{name.gsub('%', '\\%').gsub('_', '\\_')}%"
+      rows = get('/rest/v1/merchants', {
+        'or' => "(business_name.ilike.#{pattern},dba_name.ilike.#{pattern})",
+        'select' => 'id,business_name,dba_name,email,business_email',
+        'limit' => '2'
+      })
+      return rows.first if rows.one?
+    end
+
+    nil
   end
 
   # HTTP helpers

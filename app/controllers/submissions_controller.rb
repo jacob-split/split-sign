@@ -65,6 +65,8 @@ class SubmissionsController < ApplicationController
                                            params: params.merge('send_completed_email' => true))
       end
 
+    MerchantPortalDocumentSync.sync_submissions(submissions, template: @template)
+
     WebhookUrls.enqueue_events(submissions, 'submission.created')
 
     Submissions.send_signature_requests(submissions)

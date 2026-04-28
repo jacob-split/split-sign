@@ -76,6 +76,7 @@ class MerchantSubmissionsController < ApplicationController
     agent_only_fields = params[:agent_only_fields] || []
     data_paths = params[:data_paths]&.to_unsafe_h || {}
     merchant_id = params[:merchant_id]
+    merchant = merchant_id.present? ? SupabaseClient.fetch_merchant(merchant_id) : {}
 
     submitter_params = (params[:submitters]&.to_unsafe_h || {}).sort_by { |k, _| k.to_i }.map(&:last)
 
@@ -154,6 +155,8 @@ class MerchantSubmissionsController < ApplicationController
       params: { 'send_email' => params[:send_email] != '0', 'send_completed_email' => true }
     )
 
+    MerchantPortalDocumentSync.sync_submissions(submissions, template:, merchant_id:, template_name: template.name)
+
     WebhookUrls.enqueue_events(submissions, 'submission.created')
     Submissions.send_signature_requests(submissions)
     SearchEntries.enqueue_reindex(submissions)
@@ -161,16 +164,7 @@ class MerchantSubmissionsController < ApplicationController
     submitter = submissions.first&.submitters&.first
 
     if submitter
-      # Write to Supabase merchant_documents
-      SupabaseClient.insert_merchant_document({
-        merchant_id: merchant_id,
-        template_id: template.id,
-        template_name: template.name,
-        submission_id: submitter.submission_id,
-        embed_src: "#{Docuseal::CONSOLE_URL}/s/#{submitter.slug}"
-      })
-
-      SupabaseClient.update_merchant(merchant_id, { onboarding_status: 'awaiting_signature' })
+      SupabaseClient.update_merchant(merchant_id, { onboarding_status: 'awaiting_signature' }) if merchant_id.present?
 
       # Save field mappings for this template (so next send auto-fills the same way)
       save_field_mappings(template, data_paths, agent_only_fields) if data_paths.present?

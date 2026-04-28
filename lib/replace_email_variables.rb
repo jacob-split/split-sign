@@ -139,6 +139,9 @@ module ReplaceEmailVariables
   end
 
   def build_submitter_link(submitter, tracking_event_type)
+    portal_url = MerchantPortalDocumentSync.portal_url_for(submitter)
+    return portal_url if portal_url.present?
+
     if tracking_event_type == 'click_email'
       url_options =
         if EMAIL_HOST.present?

@@ -65,6 +65,8 @@ module Api
 
       submissions = create_submissions(@template, params)
 
+      MerchantPortalDocumentSync.sync_submissions(submissions, template: @template)
+
       WebhookUrls.enqueue_events(submissions, 'submission.created')
 
       Submissions.send_signature_requests(submissions)
@@ -177,6 +179,8 @@ module Api
 
       @template = template
       submissions = create_submissions(template, params)
+
+      MerchantPortalDocumentSync.sync_submissions(submissions, template:)
 
       WebhookUrls.enqueue_events(submissions, 'submission.created')
       Submissions.send_signature_requests(submissions)
