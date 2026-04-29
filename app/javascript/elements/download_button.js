@@ -1,4 +1,5 @@
 import { target, targetable } from '@github/catalyst/lib/targetable'
+import { withSafeFetchOptions } from '../lib/safe_fetch_options'
 
 export default targetable(class extends HTMLElement {
   static [target.static] = ['defaultButton', 'loadingButton']
@@ -17,7 +18,7 @@ export default targetable(class extends HTMLElement {
 
     this.toggleState()
 
-    fetch(this.dataset.src).then(async (response) => {
+    fetch(this.dataset.src, withSafeFetchOptions()).then(async (response) => {
       if (response.ok) {
         const urls = await response.json()
         const isMobileSafariIos = 'ontouchstart' in window && navigator.maxTouchPoints > 0 && /AppleWebKit/i.test(navigator.userAgent)

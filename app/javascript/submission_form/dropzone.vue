@@ -49,6 +49,7 @@
 
 <script>
 import { IconCloudUpload, IconInnerShadowTop } from '@tabler/icons-vue'
+import { withSafeFetchOptions } from '../lib/safe_fetch_options'
 
 export default {
   name: 'FileDropzone',
@@ -160,10 +161,10 @@ export default {
             formData.append('submitter_slug', this.submitterSlug)
             formData.append('name', 'attachments')
 
-            return fetch(this.baseUrl + '/api/attachments', {
+            return fetch(this.baseUrl + '/api/attachments', withSafeFetchOptions({
               method: 'POST',
               body: formData
-            }).then(async (resp) => {
+            })).then(async (resp) => {
               const data = await resp.json()
 
               if (resp.status === 422) {

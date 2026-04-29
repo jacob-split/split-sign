@@ -315,6 +315,7 @@ import AppearsOn from './appears_on'
 import FileDropzone from './dropzone'
 import MarkdownContent from './markdown_content'
 import { v4 } from 'uuid'
+import { withSafeFetchOptions } from '../lib/safe_fetch_options'
 
 let fontLoadPromise = null
 
@@ -824,10 +825,10 @@ export default {
             formData.append('remember_signature', this.rememberSignature)
             formData.append('type', 'signature')
 
-            return fetch(this.baseUrl + '/api/attachments', {
+            return fetch(this.baseUrl + '/api/attachments', withSafeFetchOptions({
               method: 'POST',
               body: formData
-            }).then(async (resp) => {
+            })).then(async (resp) => {
               if (resp.status === 422 || resp.status === 500) {
                 const data = await resp.json()
 

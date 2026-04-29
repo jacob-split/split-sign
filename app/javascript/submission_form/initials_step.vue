@@ -155,6 +155,7 @@ import SignaturePad from 'signature_pad'
 import AppearsOn from './appears_on'
 import MarkdownContent from './markdown_content'
 import SignatureStep from './signature_step'
+import { withSafeFetchOptions } from '../lib/safe_fetch_options'
 
 const scale = 3
 
@@ -399,10 +400,10 @@ export default {
             formData.append('name', 'attachments')
             formData.append('type', 'initials')
 
-            return fetch(this.baseUrl + '/api/attachments', {
+            return fetch(this.baseUrl + '/api/attachments', withSafeFetchOptions({
               method: 'POST',
               body: formData
-            }).then(async (resp) => {
+            })).then(async (resp) => {
               if (resp.status === 422 || resp.status === 500) {
                 const data = await resp.json()
 

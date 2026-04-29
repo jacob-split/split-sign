@@ -93,16 +93,25 @@ class SubmitFormController < ApplicationController
   private
 
   def trusted_portal_signing_origin?
-    origin = request.origin.to_s
-
-    return false if origin.blank?
-
     allowed_origins = ENV.fetch(
       'PORTAL_SIGNING_ORIGINS',
       'https://www.split-llc.com,https://split-llc.com,https://www.ccsplit.org,https://ccsplit.org'
     ).split(',').map(&:strip).reject(&:blank?)
 
-    allowed_origins.include?(origin)
+    candidate_origins = [request.origin.to_s]
+
+    if request.referer.present?
+      candidate_origins << URI.parse(request.referer).then { |uri| "#{uri.scheme}://#{uri.host}" }
+    end
+
+    if request.headers['X-Forwarded-Host'].present?
+      forwarded_proto = request.headers['X-Forwarded-Proto'].presence || 'https'
+      candidate_origins << "#{forwarded_proto}://#{request.headers['X-Forwarded-Host']}"
+    end
+
+    (candidate_origins.compact_blank & allowed_origins).any?
+  rescue URI::InvalidURIError
+    false
   end
 
   def maybe_require_link_2fa

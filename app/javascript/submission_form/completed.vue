@@ -103,6 +103,7 @@
 import { IconCircleCheck, IconBrandGithub, IconMail, IconDownload, IconInnerShadowTop, IconLogin } from '@tabler/icons-vue'
 import MarkdownContent from './markdown_content'
 import { sanitizeUrl } from '@braintree/sanitize-url'
+import { withSafeFetchOptions } from '../lib/safe_fetch_options'
 
 export default {
   name: 'FormCompleted',
@@ -203,9 +204,9 @@ export default {
     sendCopyToEmail () {
       this.isSendingCopy = true
 
-      fetch(this.baseUrl + `/send_submission_email.json?submitter_slug=${this.submitterSlug}`, {
+      fetch(this.baseUrl + `/send_submission_email.json?submitter_slug=${this.submitterSlug}`, withSafeFetchOptions({
         method: 'POST'
-      }).then(() => {
+      })).then(() => {
         alert(this.t('email_has_been_sent'))
       }).finally(() => {
         this.isSendingCopy = false
@@ -214,7 +215,7 @@ export default {
     download () {
       this.isDownloading = true
 
-      fetch(this.baseUrl + `/submitters/${this.submitterSlug}/download`).then(async (response) => {
+      fetch(this.baseUrl + `/submitters/${this.submitterSlug}/download`, withSafeFetchOptions()).then(async (response) => {
         if (response.ok) {
           const urls = await response.json()
           const isMobileSafariIos = 'ontouchstart' in window && navigator.maxTouchPoints > 0 && /AppleWebKit/i.test(navigator.userAgent)

@@ -599,6 +599,7 @@ import { IconInnerShadowTop, IconArrowsDiagonal, IconWritingSign, IconArrowsDiag
 import AppearsOn from './appears_on'
 import i18n from './i18n'
 import { sanitizeUrl } from '@braintree/sanitize-url'
+import { withSafeFetchOptions } from '../lib/safe_fetch_options'
 
 if (typeof URL.canParse !== 'function') {
   URL.canParse = function (url, base) {
@@ -1375,7 +1376,7 @@ export default {
         const newUrl = [window.location.pathname, queryParams.toString()].filter(Boolean).join('?')
         window.history.replaceState({}, document.title, newUrl)
 
-        return fetch(this.baseUrl + '/api/submitter_email_clicks', {
+        return fetch(this.baseUrl + '/api/submitter_email_clicks', withSafeFetchOptions({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -1384,7 +1385,7 @@ export default {
             t,
             submitter_slug: this.submitterSlug
           })
-        })
+        }))
       } else {
         return Promise.resolve({})
       }
@@ -1399,7 +1400,7 @@ export default {
         const newUrl = [window.location.pathname, queryParams.toString()].filter(Boolean).join('?')
         window.history.replaceState({}, document.title, newUrl)
 
-        return fetch(this.baseUrl + '/api/submitter_sms_clicks', {
+        return fetch(this.baseUrl + '/api/submitter_sms_clicks', withSafeFetchOptions({
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -1408,13 +1409,13 @@ export default {
             c,
             submitter_slug: this.submitterSlug
           })
-        })
+        }))
       } else {
         return Promise.resolve({})
       }
     },
     trackViewForm () {
-      fetch(this.baseUrl + '/api/submitter_form_views', {
+      fetch(this.baseUrl + '/api/submitter_form_views', withSafeFetchOptions({
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -1422,7 +1423,7 @@ export default {
         body: JSON.stringify({
           submitter_slug: this.submitterSlug
         })
-      })
+      }))
     },
     previousSignatureValueFor (field) {
       if (this.reuseSignature !== false) {
@@ -1476,10 +1477,10 @@ export default {
       } else if (this.isCompleted) {
         return Promise.resolve({})
       } else {
-        return fetch(this.baseUrl + this.submitPath, {
+        return fetch(this.baseUrl + this.submitPath, withSafeFetchOptions({
           method: 'POST',
           body: formData || new FormData(this.$refs.form)
-        }).then((response) => {
+        })).then((response) => {
           if (response.status === 200) {
             currentFieldUuids.forEach((fieldUuid) => {
               this.submittedValues[fieldUuid] = this.values[fieldUuid]
