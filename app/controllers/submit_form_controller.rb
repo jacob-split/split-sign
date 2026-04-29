@@ -5,7 +5,7 @@ class SubmitFormController < ApplicationController
 
   around_action :with_browser_locale, only: %i[show completed success]
   skip_before_action :authenticate_user!
-  skip_before_action :verify_authenticity_token, only: :update, if: :trusted_portal_signing_origin?
+  skip_before_action :verify_authenticity_token, only: :update, if: :trusted_embedded_signing_request?
   skip_authorization_check
 
   before_action :load_submitter, only: %i[show update completed]
@@ -91,6 +91,14 @@ class SubmitFormController < ApplicationController
   def success; end
 
   private
+
+  def trusted_embedded_signing_request?
+    api_submitter_signing_link? || trusted_portal_signing_origin?
+  end
+
+  def api_submitter_signing_link?
+    Submitter.joins(:submission).where(slug: params[:slug], submissions: { source: 'api' }).exists?
+  end
 
   def trusted_portal_signing_origin?
     allowed_origins = ENV.fetch(

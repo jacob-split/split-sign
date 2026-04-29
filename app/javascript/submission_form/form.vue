@@ -1519,6 +1519,8 @@ export default {
         : () => Promise.resolve({})
 
       stepPromise().then(async () => {
+        await this.$nextTick()
+
         const emptyRequiredField = this.stepFields.find((fields, index) => {
           if (forceComplete ? index === submitStepIndex : index >= submitStepIndex) {
             return false
