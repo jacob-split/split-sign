@@ -93,11 +93,20 @@ class SubmitFormController < ApplicationController
   private
 
   def trusted_embedded_signing_request?
-    api_submitter_signing_link? || trusted_portal_signing_origin?
+    api_submitter_signing_link? || trusted_portal_signing_origin? || portal_submitter_signing_request?
   end
 
   def api_submitter_signing_link?
     Submitter.joins(:submission).where(slug: params[:slug], submissions: { source: 'api' }).exists?
+  end
+
+  def portal_submitter_signing_request?
+    return false unless params[:portal_signing_flow] == 'true'
+
+    submitter = Submitter.find_by(slug: params[:slug] || params[:submit_form_slug])
+
+    submitter&.preferences&.dig('portal_signing_url').present? ||
+      submitter&.metadata&.dig('merchant_id').present?
   end
 
   def trusted_portal_signing_origin?

@@ -11,7 +11,7 @@
     :with-label="withFieldLabels && !isAnonymousChecboxes && showFieldNames"
     :current-step="currentStepFields"
     :scroll-padding="scrollPadding"
-    @focus-step="[saveStep(), currentField.type !== 'checkbox' ? isFormVisible = true : '', goToStep($event, false, true)]"
+    @focus-step="[saveStep(), currentField?.type !== 'checkbox' ? isFormVisible = true : '', goToStep($event, false, true)]"
   />
   <FieldAreas
     :steps="readonlyFields.map((e) => [e])"
@@ -69,9 +69,9 @@
     id="expand_form_button"
     class="btn btn-neutral flex text-white absolute bottom-0 w-full mb-3 expand-form-button text-base"
     style="width: 96%; margin-left: 2%"
-    @click.prevent="[isFormVisible = true, $nextTick(() => scrollIntoField(currentField))]"
+    @click.prevent="[isFormVisible = true, $nextTick(() => currentField ? scrollIntoField(currentField) : null)]"
   >
-    <template v-if="['initials', 'signature'].includes(currentField.type)">
+    <template v-if="['initials', 'signature'].includes(currentField?.type)">
       <IconWritingSign stroke-width="1.5" />
       {{ t('sign_now') }}
     </template>
@@ -139,7 +139,10 @@
           name="validate"
           type="hidden"
         >
-        <div class="md:mt-4">
+        <div
+          v-if="currentField"
+          class="md:mt-4"
+        >
           <div v-if="['cells', 'text'].includes(currentField.type)">
             <TextStep
               :key="currentField.uuid"
@@ -406,6 +409,7 @@
             :dry-run="dryRun"
             :with-disclosure="withDisclosure"
             :with-qr-button="withQrButton"
+            :portal-signing-flow="portalSigningFlow"
             :submitter="submitter"
             :show-field-names="showFieldNames"
             @update:reason="values[currentField.preferences?.reason_field_uuid] = $event"
@@ -495,7 +499,7 @@
           />
         </div>
         <div
-          v-if="(currentField.type !== 'payment' && currentField.type !== 'verification' && currentField.type !== 'kba') || submittedValues[currentField.uuid]"
+          v-if="currentField && ((currentField.type !== 'payment' && currentField.type !== 'verification' && currentField.type !== 'kba') || submittedValues[currentField.uuid])"
           :class="currentField.type === 'signature' ? 'mt-2' : 'mt-4 md:mt-6'"
         >
           <button
@@ -635,6 +639,8 @@ const isEmpty = (obj) => {
   return false
 }
 
+const PORTAL_SIGNING_FIELD_TYPES = ['signature', 'initials']
+
 export default {
   name: 'SubmissionForm',
   components: {
@@ -700,6 +706,11 @@ export default {
       default: false
     },
     onlyRequiredFields: {
+      type: Boolean,
+      required: false,
+      default: false
+    },
+    portalSigningFlow: {
       type: Boolean,
       required: false,
       default: false
@@ -967,13 +978,13 @@ export default {
       if (this.alwaysMinimize) {
         return this.t('submit')
       } else if (!this.onlyRequiredFields && this.stepFields.length === this.currentStep + 1) {
-        if (this.currentField.type === 'signature') {
+        if (this.currentField?.type === 'signature') {
           return this.t('sign_and_complete')
         } else {
           return this.t('complete')
         }
       } else if (this.onlyRequiredFields && !this.findNextStep(this.currentStep)) {
-        if (this.currentField.type === 'signature') {
+        if (this.currentField?.type === 'signature') {
           return this.t('sign_and_complete')
         } else {
           return this.t('complete')
@@ -1028,14 +1039,14 @@ export default {
       }
     },
     isAnonymousChecboxes () {
-      return this.currentField.type === 'checkbox' && this.currentStepFields.every((e) => !e.name && !e.required) && this.currentStepFields.length > 4
+      return this.currentField?.type === 'checkbox' && this.currentStepFields.every((e) => !e.name && !e.required) && this.currentStepFields.length > 4
     },
     isButtonDisabled () {
       if (this.recalculateButtonDisabledKey) {
         return this.isSubmitting ||
-        (this.currentField.required && ['image', 'file', 'multiple'].includes(this.currentField.type) && !this.values[this.currentField.uuid]?.length) ||
-        (this.currentField.required && this.currentField.type === 'signature' && !this.values[this.currentField.uuid]?.length && this.$refs.currentStep && !this.$refs.currentStep.isSignatureStarted) ||
-        (this.currentField.required && this.currentField.type === 'initials' && !this.values[this.currentField.uuid]?.length && this.$refs.currentStep && !this.$refs.currentStep.isInitialsStarted)
+        (this.currentField?.required && ['image', 'file', 'multiple'].includes(this.currentField.type) && !this.values[this.currentField.uuid]?.length) ||
+        (this.currentField?.required && this.currentField.type === 'signature' && !this.values[this.currentField.uuid]?.length && this.$refs.currentStep && !this.$refs.currentStep.isSignatureStarted) ||
+        (this.currentField?.required && this.currentField.type === 'initials' && !this.values[this.currentField.uuid]?.length && this.$refs.currentStep && !this.$refs.currentStep.isInitialsStarted)
       } else {
         return false
       }
@@ -1055,7 +1066,11 @@ export default {
       const verificationFields = []
 
       const sortedFields = this.fields.reduce((acc, f) => {
-        if (f.type === 'verification' || f.type === 'kba') {
+        if (this.portalSigningFlow) {
+          if (!f.readonly && PORTAL_SIGNING_FIELD_TYPES.includes(f.type)) {
+            acc.push(f)
+          }
+        } else if (f.type === 'verification' || f.type === 'kba') {
           verificationFields.push(f)
         } else if (!f.readonly) {
           acc.push(f)
@@ -1100,7 +1115,7 @@ export default {
         })
       }
 
-      if (verificationFields.length) {
+      if (!this.portalSigningFlow && verificationFields.length) {
         sortedFields.push(verificationFields.pop())
       }
 
@@ -1437,13 +1452,13 @@ export default {
       }
     },
     goToStep (stepIndex, scrollToArea = false, clickUpload = false) {
-      this.currentStep = stepIndex
+      this.currentStep = Math.max(0, Math.min(stepIndex, this.stepFields.length - 1))
       this.showFillAllRequiredFields = false
 
       this.$nextTick(() => {
         this.recalculateButtonDisabledKey = Math.random()
 
-        if (!this.isCompleted) {
+        if (!this.isCompleted && this.currentField) {
           if (scrollToArea) {
             this.$nextTick(() => {
               setTimeout(() => this.scrollIntoField(this.currentField), 1)
@@ -1451,20 +1466,63 @@ export default {
           }
 
           this.enableScrollIntoField = false
-          this.$refs.form.querySelector('input[type="date"], input[type="number"], input[type="text"], select')?.focus()
+          this.$refs.form?.querySelector('input[type="date"], input[type="number"], input[type="text"], select')?.focus()
           this.enableScrollIntoField = true
 
           if (clickUpload && !this.values[this.currentField.uuid] && ['file', 'image'].includes(this.currentField.type)) {
-            this.$refs.form.querySelector('input[type="file"]')?.click()
+            this.$refs.form?.querySelector('input[type="file"]')?.click()
           }
         }
       })
     },
+    portalActionFieldUuids () {
+      return new Set(this.stepFields.flat().map((field) => field.uuid))
+    },
+    filteredPortalFormData (formData) {
+      if (!this.portalSigningFlow) {
+        return formData
+      }
+
+      const actionFieldUuids = this.portalActionFieldUuids()
+      const filteredFormData = new FormData()
+      const includedActionFieldUuids = new Set()
+
+      filteredFormData.append('portal_signing_flow', 'true')
+
+      formData.forEach((value, key) => {
+        if (key === 'with_reason') {
+          return
+        }
+
+        const valuesMatch = key.match(/^values\[(.+)\]$/)
+
+        if (!valuesMatch) {
+          filteredFormData.append(key, value)
+          return
+        }
+
+        if (actionFieldUuids.has(valuesMatch[1])) {
+          const fieldUuid = valuesMatch[1]
+          const currentValue = this.values[fieldUuid]
+
+          filteredFormData.append(key, isEmpty(currentValue) ? value : currentValue)
+          includedActionFieldUuids.add(fieldUuid)
+        }
+      })
+
+      actionFieldUuids.forEach((fieldUuid) => {
+        if (!includedActionFieldUuids.has(fieldUuid) && !isEmpty(this.values[fieldUuid])) {
+          filteredFormData.append(`values[${fieldUuid}]`, this.values[fieldUuid])
+        }
+      })
+
+      return filteredFormData
+    },
     saveStep (formData) {
       const currentFieldUuids = this.currentStepFields.map((f) => f.uuid)
-      const currentFieldType = this.currentField.type
+      const currentFieldType = this.currentField?.type
 
-      if (!formData && !this.$refs.form.checkValidity() && currentFieldUuids.every((fieldUuid) => isEmpty(this.submittedValues[fieldUuid]) || !isEmpty(this.values[fieldUuid]))) {
+      if (!formData && !this.$refs.form?.checkValidity() && currentFieldUuids.every((fieldUuid) => isEmpty(this.submittedValues[fieldUuid]) || !isEmpty(this.values[fieldUuid]))) {
         return
       }
 
@@ -1477,9 +1535,11 @@ export default {
       } else if (this.isCompleted) {
         return Promise.resolve({})
       } else {
+        const requestBody = this.filteredPortalFormData(formData || new FormData(this.$refs.form))
+
         return fetch(this.baseUrl + this.submitPath, withSafeFetchOptions({
           method: 'POST',
-          body: formData || new FormData(this.$refs.form)
+          body: requestBody
         })).then((response) => {
           if (response.status === 200) {
             currentFieldUuids.forEach((fieldUuid) => {
@@ -1496,7 +1556,7 @@ export default {
       }
     },
     scrollIntoField (field) {
-      if (this.enableScrollIntoField) {
+      if (this.enableScrollIntoField && field && this.$refs.areas) {
         return this.$refs.areas.scrollIntoField(field)
       }
     },
@@ -1514,7 +1574,9 @@ export default {
 
       const submitStepIndex = this.currentStep
 
-      const stepPromise = ['signature', 'phone', 'initials', 'payment', 'verification', 'kba'].includes(this.currentField.type)
+      const currentFieldType = this.currentField?.type
+      const currentFieldUuid = this.currentField?.uuid
+      const stepPromise = currentFieldType && ['signature', 'phone', 'initials', 'payment', 'verification', 'kba'].includes(currentFieldType) && this.$refs.currentStep?.submit
         ? this.$refs.currentStep.submit
         : () => Promise.resolve({})
 
@@ -1531,7 +1593,7 @@ export default {
           })
         })
 
-        const formData = new FormData(this.$refs.form)
+        const formData = this.$refs.form ? new FormData(this.$refs.form) : new FormData()
         const isLastStep = (this.onlyRequiredFields ? !this.findNextStep(submitStepIndex) : (submitStepIndex === this.stepFields.length - 1)) || forceComplete
 
         if (isLastStep && !emptyRequiredField && !this.inviteSubmitters.length && !this.optionalInviteSubmitters.length) {
@@ -1541,7 +1603,7 @@ export default {
 
         let saveStepRequest
 
-        if (!isLastStep && this.phoneVerifiedValues[this.currentField.uuid] && this.phoneVerifiedValues[this.currentField.uuid] === this.values[this.currentField.uuid]) {
+        if (!isLastStep && currentFieldUuid && this.phoneVerifiedValues[currentFieldUuid] && this.phoneVerifiedValues[currentFieldUuid] === this.values[currentFieldUuid]) {
           saveStepRequest = Promise.resolve({})
         } else {
           saveStepRequest = this.saveStep(formData)
@@ -1549,7 +1611,20 @@ export default {
 
         await saveStepRequest.then(async (response) => {
           if (response.status === 422 || response.status === 500) {
-            const data = await response.json()
+            let data = {}
+
+            try {
+              data = await response.json()
+            } catch (error) {
+              console.error(error)
+            }
+
+            const responseError = data?.error
+            const errorMessage = typeof responseError === 'string'
+              ? responseError
+              : responseError
+                ? JSON.stringify(responseError)
+                : this.t('value_is_invalid')
 
             if (data.field_uuid) {
               const field = this.fieldsUuidIndex[data.field_uuid]
@@ -1565,15 +1640,15 @@ export default {
               }
 
               return Promise.reject(new Error('Required field: ' + data.field_uuid))
-            } else if (data.error) {
-              const i18nKey = data.error.replace(/\s+/g, '_').toLowerCase()
+            } else if (responseError) {
+              const i18nKey = errorMessage.replace(/\s+/g, '_').toLowerCase()
 
-              alert(this.t(i18nKey) !== i18nKey ? this.t(i18nKey) : data.error)
+              alert(this.t(i18nKey) !== i18nKey ? this.t(i18nKey) : errorMessage)
             } else {
               alert(this.t('value_is_invalid'))
             }
 
-            return Promise.reject(new Error(data.error))
+            return Promise.reject(new Error(errorMessage))
           }
 
           const nextStep = (isLastStep && emptyRequiredField) || (forceComplete ? null : this.findNextStep(submitStepIndex))

@@ -413,6 +413,11 @@ export default {
       type: String,
       required: false,
       default: ''
+    },
+    portalSigningFlow: {
+      type: Boolean,
+      required: false,
+      default: false
     }
   },
   emits: ['attached', 'update:model-value', 'start', 'minimize', 'update:reason', 'touch-attachment'],
@@ -435,7 +440,7 @@ export default {
       return this.field.preferences?.format
     },
     withSigningReason () {
-      return this.requireSigningReason || this.field.preferences?.reasons?.length
+      return !this.portalSigningFlow && (this.requireSigningReason || this.field.preferences?.reasons?.length)
     },
     defaultReasons () {
       return {

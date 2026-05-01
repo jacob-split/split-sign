@@ -65,11 +65,16 @@ module SupabaseClient
     existing = get('/rest/v1/merchant_documents', {
       'merchant_id' => "eq.#{merchant_id}",
       'template_id' => "eq.#{template_id}",
+      'archived_at' => 'is.null',
       'select' => 'id',
+      'order' => 'updated_at.desc',
       'limit' => '1'
     })
 
     body = attrs.compact.merge(updated_at: Time.current.iso8601)
+    body[:signed_at] = attrs[:signed_at] if attrs.key?(:signed_at)
+    body['signed_at'] = attrs['signed_at'] if attrs.key?('signed_at')
+
     if existing.any?
       patch('/rest/v1/merchant_documents', body, { 'id' => "eq.#{existing.first['id']}" })
     else
@@ -133,6 +138,14 @@ module SupabaseClient
   end
 
   def fetch_merchant_documents(merchant_id)
+    get('/rest/v1/merchant_documents', {
+      'merchant_id' => "eq.#{merchant_id}",
+      'select' => '*',
+      'order' => 'created_at.asc'
+    })
+  end
+
+  def fetch_active_merchant_documents(merchant_id)
     get('/rest/v1/merchant_documents', {
       'merchant_id' => "eq.#{merchant_id}",
       'archived_at' => 'is.null',

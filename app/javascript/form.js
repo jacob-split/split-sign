@@ -41,6 +41,7 @@ safeRegisterElement('submission-form', class extends HTMLElement {
       withDisclosure: this.dataset.withDisclosure === 'true',
       reuseSignature: this.dataset.reuseSignature !== 'false',
       onlyRequiredFields: this.dataset.onlyRequiredFields === 'true',
+      portalSigningFlow: this.dataset.portalSigningFlow === 'true',
       withTypedSignature: this.dataset.withTypedSignature !== 'false',
       authenticityToken: document.querySelector('meta[name="csrf-token"]')?.content,
       rememberSignature: this.dataset.rememberSignature === 'true',

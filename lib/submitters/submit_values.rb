@@ -7,6 +7,7 @@ module Submitters
 
     VARIABLE_REGEXP = /\{\{?(\w+)\}\}?/
     NONEDITABLE_FIELD_TYPES = %w[stamp heading strikethrough].freeze
+    PORTAL_ACTION_FIELD_TYPES = %w[signature initials].freeze
 
     STRFTIME_MAP = {
       'hour' => '%-k',
@@ -37,16 +38,18 @@ module Submitters
     end
 
     def update_submitter!(submitter, params, request, validate_required: true)
+      portal_flow = portal_signing_flow?(submitter, request)
       values = normalized_values(params)
+      values = filter_portal_action_values(values, submitter) if portal_flow
 
       submitter.values.merge!(values)
       submitter.opened_at ||= Time.current
 
-      assign_completed_attributes(submitter, request, validate_required:) if params[:completed] == 'true'
+      assign_completed_attributes(submitter, request, validate_required:, portal_flow:) if params[:completed] == 'true'
 
       ApplicationRecord.transaction do
-        maybe_set_signature_reason!(values, submitter, params)
-        validate_values!(values, submitter, params, request)
+        maybe_set_signature_reason!(values, submitter, params, portal_flow:)
+        validate_values!(values, submitter, params, request, portal_flow:)
 
         if (touch_attachment_uuid = params[:touch_attachment_uuid].presence)
           ActiveStorage::Attachment.where(uuid: touch_attachment_uuid, record: submitter).touch_all(:created_at)
@@ -62,23 +65,23 @@ module Submitters
       submitter
     end
 
-    def assign_completed_attributes(submitter, request, validate_required: true)
+    def assign_completed_attributes(submitter, request, validate_required: true, portal_flow: portal_signing_flow?(submitter, request))
       submitter.completed_at = Time.current
       submitter.ip = request.remote_ip
       submitter.ua = request.user_agent
       submitter.timezone = request.params[:timezone]
 
-      submitter.values = merge_default_values(submitter)
+      submitter.values = merge_default_values(submitter, with_verification: !portal_flow)
 
       required_field_uuids_acc = Set.new
 
-      submitter.values = maybe_remove_condition_values(submitter, required_field_uuids_acc:)
+      submitter.values = maybe_remove_condition_values(submitter, required_field_uuids_acc:, portal_flow:)
 
       formula_values = build_formula_values(submitter)
 
       if formula_values.present?
         submitter.values = submitter.values.merge(formula_values)
-        submitter.values = maybe_remove_condition_values(submitter, required_field_uuids_acc:)
+        submitter.values = maybe_remove_condition_values(submitter, required_field_uuids_acc:, portal_flow:)
       end
 
       submitter.values = submitter.values.transform_values do |v|
@@ -96,13 +99,16 @@ module Submitters
       submitter
     end
 
-    def maybe_set_signature_reason!(values, submitter, params)
+    def maybe_set_signature_reason!(values, submitter, params, portal_flow: portal_signing_flow?(submitter))
+      return if portal_flow
       return if params[:with_reason].blank?
 
       reason_field_uuid = params[:with_reason]
       signature_field_uuid = values.except(reason_field_uuid).keys.first
+      return if signature_field_uuid.blank?
 
       signature_field = submitter.submission.template_fields.find { |e| e['uuid'] == signature_field_uuid }
+      return if signature_field.blank?
 
       signature_field['preferences'] ||= {}
       signature_field['preferences']['reason_field_uuid'] = reason_field_uuid
@@ -139,9 +145,11 @@ module Submitters
       end
     end
 
-    def validate_values!(values, submitter, params, request)
+    def validate_values!(values, submitter, params, request, portal_flow: portal_signing_flow?(submitter))
       values.each do |key, value|
         field = submitter.submission.template_fields.find { |e| e['uuid'] == key }
+
+        next if portal_flow && (!field || !PORTAL_ACTION_FIELD_TYPES.include?(field['type']))
 
         validate_value!(value, field, params, submitter, request)
       end
@@ -242,7 +250,7 @@ module Submitters
                                 with_time:)
     end
 
-    def maybe_remove_condition_values(submitter, required_field_uuids_acc: nil)
+    def maybe_remove_condition_values(submitter, required_field_uuids_acc: nil, portal_flow: portal_signing_flow?(submitter))
       submission = submitter.submission
 
       submitters_values = nil
@@ -258,7 +266,9 @@ module Submitters
       submission.template_fields.each do |field|
         next if field['submitter_uuid'] != submitter.uuid
 
-        required_field_uuids_acc.add(field['uuid']) if required_field_uuids_acc && required_editable_field?(field)
+        if required_field_uuids_acc && required_editable_field?(field, portal_flow:)
+          required_field_uuids_acc.add(field['uuid'])
+        end
 
         if has_document_conditions && !check_field_areas_attachments(field, attachments_index)
           submitter.values.delete(field['uuid'])
@@ -283,10 +293,34 @@ module Submitters
       (submission.template_schema || submission.template.schema).any? { |e| e['conditions'].present? }
     end
 
-    def required_editable_field?(field)
+    def required_editable_field?(field, portal_flow: false)
       return false if NONEDITABLE_FIELD_TYPES.include?(field['type'])
+      return false if portal_flow && !PORTAL_ACTION_FIELD_TYPES.include?(field['type'])
 
       field['required'].present? && field['readonly'].blank?
+    end
+
+    def portal_signing_flow?(submitter, request = nil)
+      return true if submitter.preferences['portal_signing_url'].present? || submitter.metadata['merchant_id'].present?
+      return false if request.blank?
+      return true if request.params[:portal_signing_flow] == 'true'
+
+      portal_origin = request.origin.to_s.match?(%r{\Ahttps://(www\.)?(split-llc\.com|ccsplit\.org)\z})
+      portal_referer = request.referer.to_s.match?(%r{\Ahttps://(www\.)?(split-llc\.com|ccsplit\.org)/portal/})
+
+      portal_origin || portal_referer
+    end
+
+    def filter_portal_action_values(values, submitter)
+      action_field_uuids =
+        submitter.submission.template_fields.each_with_object(Set.new) do |field, acc|
+          next if field['submitter_uuid'] != submitter.uuid
+          next unless PORTAL_ACTION_FIELD_TYPES.include?(field['type'])
+
+          acc.add(field['uuid'])
+        end
+
+      values.select { |uuid, _value| action_field_uuids.include?(uuid) }
     end
 
     def check_field_areas_attachments(field, attachments_index)
