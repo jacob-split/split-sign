@@ -138,9 +138,15 @@ class ApplicationController < ActionController::Base
       policy.media_src :self
       policy.frame_src :self
       policy.worker_src :self, :blob
-      policy.connect_src :self
 
-      policy.directives['connect-src'] << 'ws:' if Rails.env.development?
+      default_url_options = Docuseal.default_url_options.symbolize_keys
+      support_host = default_url_options[:host].presence
+      support_protocol = default_url_options[:protocol].presence || 'https'
+      support_origin = "#{support_protocol}://#{support_host}" if support_host.present?
+      connect_sources = [:self]
+      connect_sources << support_origin if support_origin.present?
+      connect_sources << 'ws:' if Rails.env.development?
+      policy.connect_src(*connect_sources)
     end
   end
 end

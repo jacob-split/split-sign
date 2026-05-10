@@ -1,0 +1,10 @@
+(function() {
+  const theme = localStorage.getItem('theme') || 'system';
+  const doc = document.documentElement;
+  if (theme === 'system') {
+    const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    doc.setAttribute('data-theme', dark ? 'dark' : 'light');
+  } else {
+    doc.setAttribute('data-theme', theme);
+  }
+})();

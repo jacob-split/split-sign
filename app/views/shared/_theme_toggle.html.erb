@@ -1,0 +1,51 @@
+<script>
+  const initThemeToggle = () => {
+    const themeMenu = document.querySelector('[data-theme-menu]');
+    if (!themeMenu) return;
+
+    const buttons = themeMenu.querySelectorAll('[data-set-theme]');
+
+    const applyTheme = (theme) => {
+      const doc = document.documentElement;
+      if (theme === 'system') {
+        const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        doc.setAttribute('data-theme', dark ? 'dark' : 'light');
+      } else {
+        doc.setAttribute('data-theme', theme);
+      }
+      localStorage.setItem('theme', theme);
+      updateActive();
+    };
+
+    const updateActive = () => {
+      const current = localStorage.getItem('theme') || 'system';
+      buttons.forEach(btn => {
+        if (btn.dataset.setTheme === current) {
+          btn.classList.add('bg-base-300');
+        } else {
+          btn.classList.remove('bg-base-300');
+        }
+      });
+    };
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        applyTheme(btn.dataset.setTheme);
+      });
+    });
+
+    updateActive();
+  };
+
+  // Run immediately if DOM is ready, otherwise wait
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initThemeToggle);
+  } else {
+    initThemeToggle();
+  }
+
+  // Re-init on turbo navigation (if using Turbo)
+  if (window.Turbo) {
+    document.addEventListener('turbo:load', initThemeToggle);
+  }
+</script>

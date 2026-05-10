@@ -2,6 +2,7 @@
 
 /db/*.sqlite3
 /db/*.sqlite3-*
+/db.sqlite3
 
 /log/*
 /tmp/*
@@ -30,6 +31,9 @@ yarn-debug.log*
 .yarn-integrity
 
 .env
+.env.*
+/docuseal.env
+/docuseal.env.*
 .DS_Store
 
 /coverage
@@ -38,3 +42,4 @@ yarn-debug.log*
 /ee
 dump.rdb
 *.onnx
+*.bak*

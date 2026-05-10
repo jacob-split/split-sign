@@ -6,15 +6,20 @@ module MerchantPortalDocumentSync
   module_function
 
   def sync_submissions(submissions, template:, merchant_id: nil, template_name: nil)
+    submissions = Array.wrap(submissions)
     base_context = build_context(template, merchant_id:, template_name:)
 
-    Array.wrap(submissions).filter_map do |submission|
+    documents = submissions.filter_map do |submission|
       submitter = merchant_submitter_for(submission)
       context = context_for_submitter(base_context, template, submitter)
       next unless context&.dig(:merchant_id).present?
 
       sync_submission(submission, template, context, submitter)
     end
+
+    maybe_generate_review_agreements(submissions)
+
+    documents
   rescue SupabaseClient::Error => e
     Rails.logger.warn("[MerchantPortalDocumentSync] Supabase sync failed: #{e.message}")
     []
@@ -22,6 +27,12 @@ module MerchantPortalDocumentSync
 
   def portal_url_for(submitter)
     submitter.preferences['portal_signing_url'].presence
+  end
+
+  def maybe_generate_review_agreements(submissions)
+    MerchantPortalReviewAgreementGenerator.maybe_generate_for_portal_onboarding(submissions)
+  rescue StandardError => e
+    Rails.logger.warn("[MerchantPortalDocumentSync] review agreement generation failed: #{e.class}: #{e.message}")
   end
 
   def archive_submission(submission, archived_at: Time.current)
@@ -56,7 +67,10 @@ module MerchantPortalDocumentSync
   end
 
   def context_for_submitter(context, template, submitter)
-    return context if context[:merchant_id].present? || submitter.blank?
+    return context if submitter.blank?
+
+    context = context.merge(context_from_submitter_metadata(submitter))
+    return context if context[:merchant_id].present?
 
     merchant = SupabaseClient.find_merchant_for_document_context(
       email: submitter.email,
@@ -65,6 +79,16 @@ module MerchantPortalDocumentSync
     return context unless merchant
 
     context.merge(merchant_id: merchant['id'])
+  end
+
+  def context_from_submitter_metadata(submitter)
+    metadata = submitter.metadata || {}
+    {
+      merchant_id: metadata['merchant_id'],
+      merchant_identity_id: metadata['merchant_identity_id'],
+      attio_company_id: metadata['attio_company_id'],
+      attio_person_id: metadata['attio_person_id']
+    }.compact
   end
 
   def sync_submission(submission, template, context, submitter = nil)
