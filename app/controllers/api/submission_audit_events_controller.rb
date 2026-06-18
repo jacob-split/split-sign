@@ -38,6 +38,7 @@ module Api
                 data:,
                 event_timestamp: event_timestamp
               )
+      purge_generated_audit_files
 
       render json: {
         id: event.id,
@@ -84,6 +85,11 @@ module Api
       return if submitter.phone == phone
 
       submitter.update!(phone:)
+    end
+
+    def purge_generated_audit_files
+      @submission.audit_trail_attachment&.purge
+      @submission.combined_document_attachment&.purge
     end
 
     def find_existing_event(event_type, data)
