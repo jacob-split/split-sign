@@ -90,6 +90,13 @@ module Api
     def purge_generated_audit_files
       @submission.audit_trail_attachment&.purge
       @submission.combined_document_attachment&.purge
+      purge_generation_locks
+    end
+
+    def purge_generation_locks
+      keys = ["audit_trail:#{@submission.id}"]
+      keys += @submission.submitters.map { |submitter| "combined_document:#{submitter.id}" }
+      LockEvent.where(key: keys).delete_all
     end
 
     def find_existing_event(event_type, data)
