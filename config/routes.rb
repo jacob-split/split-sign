@@ -15,6 +15,8 @@ Rails.application.routes.draw do
   get 'manifest' => 'pwa#manifest'
   get 'docs/api' => 'api_docs#show'
   get 'docs/openapi.json' => 'api_docs#openapi'
+  get '.well-known/agent.json' => 'api/agent#agent_json'
+  get '.well-known/agent-card.json' => 'api/agent#agent_card'
 
   devise_for :users, path: '/', only: %i[sessions passwords omniauth_callbacks],
                      controllers: { sessions: 'sessions', passwords: 'passwords',
@@ -27,6 +29,11 @@ Rails.application.routes.draw do
   end
 
   namespace :api, defaults: { format: :json } do
+    get 'agent/capabilities', to: 'agent#capabilities'
+    get 'agent/readiness', to: 'agent#readiness'
+    get 'agent/readiness.json', to: 'agent#readiness'
+    get 'agent/openapi.json', to: 'agent#openapi'
+    post 'agent/actions/:action_id/invoke', to: 'agent#invoke'
     resource :user, only: %i[show]
     resources :attachments, only: %i[create]
     resources :submitter_email_clicks, only: %i[create]

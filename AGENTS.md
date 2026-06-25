@@ -15,3 +15,15 @@ For Cloud runs, this repo intentionally carries `.codex/cloud-setup.sh`, `.codex
 This repository contains Split signing/document workflow code. Treat document generation, signing links, merchant/customer data, webhooks, and production credentials as sensitive production behavior.
 
 Inspect existing Rails conventions before editing, run focused tests for touched code, and verify production-bound behavior against the actual runtime path named by Jacob. Do not mutate merchant/customer state or send live document workflows unless Jacob explicitly approves live execution in the active thread.
+
+Before changing merchant portal document sync, Supabase `merchant_documents` writeback, signed-document completion state, review-agreement generation, or Split Signature agent discovery, read `docs/split-sign-continuity.md`.
+
+Current machine-readable discovery surfaces:
+
+- `/.well-known/agent.json`
+- `/.well-known/agent-card.json`
+- `/api/agent/capabilities`
+- `/api/agent/readiness.json`
+- `/api/agent/openapi.json`
+
+Public agent actions are intentionally blocked for live signing/document mutations until an action has authenticated execution, risk metadata, and proof fields.
