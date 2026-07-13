@@ -42,8 +42,10 @@ module MerchantPii
   def decrypt_merchant(merchant)
     return unless merchant
 
-    merchant['ein'] = decrypt(merchant['ein']) if merchant['ein'].present?
-    merchant['bank_account_number'] = decrypt(merchant['bank_account_number']) if merchant['bank_account_number'].present?
+    %w[ein bank_name bank_routing_number bank_account_number].each do |field|
+      value = merchant[field]
+      merchant[field] = decrypt(value) if value && (!value.respond_to?(:empty?) || !value.empty?)
+    end
 
     merchant
   end
@@ -52,7 +54,8 @@ module MerchantPii
     return unless principal
 
     %w[ssn dob drivers_license_number].each do |field|
-      principal[field] = decrypt(principal[field]) if principal[field].present?
+      value = principal[field]
+      principal[field] = decrypt(value) if value && (!value.respond_to?(:empty?) || !value.empty?)
     end
 
     principal

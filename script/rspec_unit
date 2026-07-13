@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+bundle_path="${BUNDLE_PATH:-${HOME}/.bundle/split-sign-ruby-4.0.1}"
+
+cd "${repo_root}"
+export BUNDLE_PATH="${bundle_path}"
+exec rbenv exec bundle exec rspec --options /dev/null "$@"
