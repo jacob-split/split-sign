@@ -27,6 +27,14 @@ Do not omit `--no-deps`; recreating the app must not bounce PostgreSQL. After de
 
 The VM host does not provide Ruby outside the application container. Use the installed host Python runtime for any atomic root-owned dotenv update. If the shared VM's classic Docker builder stalls on a tiny overlay, stop after the first failed build and recheck I/O pressure. A safe fallback is to derive the same commit-pinned image with `docker create`, `docker cp`, and `docker commit`, set the full OCI revision label, then compare all deployed file hashes before use; do not loop the builder or install another dependency tree.
 
+The container's configured working directory is the persisted `/data/docuseal` volume, while the Rails application and `Gemfile` are under `/app`. Run the harmless review-generation lock probe from `/app` and pass the current hash-shaped job payload:
+
+```sh
+app_id="$(sudo docker compose -f /opt/docuseal/docker-compose.gizmo.yml ps -q app)"
+sudo docker exec -w /app "$app_id" bundle exec rails runner \
+  "GenerateMerchantPortalReviewAgreementsJob.new.perform({'submission_ids'=>[-999999]}); puts 'review_lock_probe=passed'"
+```
+
 ## Transactional Email
 
 Split Signature uses the existing Split Resend account through SMTP. The canonical Mac Keychain entries are `com.split.shared.RESEND_API_KEY` and `com.split.shared.RESEND_FROM_EMAIL`; reuse those values and never rotate the key as part of a Split Signature deploy. Production must render a root-owned `/opt/docuseal/.env` with `SMTP_ADDRESS=smtp.resend.com`, port `587`, username `resend`, the existing Resend key as `SMTP_PASSWORD`, `SMTP_DOMAIN=split-llc.com`, STARTTLS enabled, and the Split Signature sender address. A blank `SMTP_ADDRESS` is unconfigured and must not activate the SMTP delivery path.
