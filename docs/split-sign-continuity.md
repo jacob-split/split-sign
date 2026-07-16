@@ -25,6 +25,8 @@ sudo docker compose -f /opt/docuseal/docker-compose.gizmo.yml up -d --no-deps --
 
 Do not omit `--no-deps`; recreating the app must not bounce PostgreSQL. After deployment, read back the running image and revision, compare the deployed source-file hashes with the committed files, verify PostgreSQL health and record counts, check Sidekiq/Rails startup logs, exercise the review-generation job lock with a harmless nonexistent submission, and confirm both origin and public readiness latency. Retain the previous image and rollback metadata until those checks pass.
 
+The VM host does not provide Ruby outside the application container. Use the installed host Python runtime for any atomic root-owned dotenv update. If the shared VM's classic Docker builder stalls on a tiny overlay, stop after the first failed build and recheck I/O pressure. A safe fallback is to derive the same commit-pinned image with `docker create`, `docker cp`, and `docker commit`, set the full OCI revision label, then compare all deployed file hashes before use; do not loop the builder or install another dependency tree.
+
 ## Transactional Email
 
 Split Signature uses the existing Split Resend account through SMTP. The canonical Mac Keychain entries are `com.split.shared.RESEND_API_KEY` and `com.split.shared.RESEND_FROM_EMAIL`; reuse those values and never rotate the key as part of a Split Signature deploy. Production must render a root-owned `/opt/docuseal/.env` with `SMTP_ADDRESS=smtp.resend.com`, port `587`, username `resend`, the existing Resend key as `SMTP_PASSWORD`, `SMTP_DOMAIN=split-llc.com`, STARTTLS enabled, and the Split Signature sender address. A blank `SMTP_ADDRESS` is unconfigured and must not activate the SMTP delivery path.
