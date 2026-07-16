@@ -13,6 +13,18 @@ This is the current contract for Split Signature / DocuSeal document generation,
 
 The runtime tree is not the source of truth. Update GitHub `main`, deploy deliberately, and verify the live runtime path.
 
+## Production Deployment
+
+Build a commit-pinned image and record the full source revision in both the image OCI labels and `/opt/docuseal/.split-source-revision`. Keep a rollback copy of the prior compose/runtime metadata under `/opt/docuseal/releases/<revision>/rollback` before changing the live app.
+
+The production compose environment is root-owned. Use `sudo` for compose operations instead of changing ownership or copying credentials. For an app-only release, preserve PostgreSQL and deploy only the app service:
+
+```sh
+sudo docker compose -f /opt/docuseal/docker-compose.gizmo.yml up -d --no-deps --no-build app
+```
+
+Do not omit `--no-deps`; recreating the app must not bounce PostgreSQL. After deployment, read back the running image and revision, compare the deployed source-file hashes with the committed files, verify PostgreSQL health and record counts, check Sidekiq/Rails startup logs, exercise the review-generation job lock with a harmless nonexistent submission, and confirm both origin and public readiness latency. Retain the previous image and rollback metadata until those checks pass.
+
 ## Portal Document Sync
 
 Primary Split-owned files:
