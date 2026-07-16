@@ -2,6 +2,7 @@
 
 require 'active_support/core_ext/integer/time'
 require 'active_support/core_ext/string'
+require Rails.root.join('lib/smtp_environment_config').to_s
 
 Rails.backtrace_cleaner.remove_silencers!
 
@@ -77,18 +78,9 @@ Rails.application.configure do
   # Set this to true and configure the email server for immediate delivery to raise delivery errors.
   config.action_mailer.raise_delivery_errors = false
 
-  if ENV['SMTP_ADDRESS']
+  if (smtp_settings = SmtpEnvironmentConfig.build)
     config.action_mailer.delivery_method = :smtp
-    config.action_mailer.smtp_settings = {
-      address: ENV.fetch('SMTP_ADDRESS', nil),
-      port: ENV.fetch('SMTP_PORT', 587),
-      domain: ENV.fetch('SMTP_DOMAIN', nil),
-      user_name: ENV.fetch('SMTP_USERNAME', nil),
-      password: ENV.fetch('SMTP_PASSWORD', nil),
-      openssl_verify_mode: ENV['SMTP_SSL_VERIFY'] == 'false' ? OpenSSL::SSL::VERIFY_NONE : OpenSSL::SSL::VERIFY_PEER,
-      authentication: ENV.fetch('SMTP_PASSWORD', nil).present? ? ENV.fetch('SMTP_AUTHENTICATION', 'plain') : nil,
-      enable_starttls: ENV['SMTP_ENABLE_STARTTLS'] != 'false'
-    }.compact
+    config.action_mailer.smtp_settings = smtp_settings
   end
 
   # Enable locale fallbacks for I18n (makes lookups for any locale fall back to

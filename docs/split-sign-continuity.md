@@ -25,6 +25,12 @@ sudo docker compose -f /opt/docuseal/docker-compose.gizmo.yml up -d --no-deps --
 
 Do not omit `--no-deps`; recreating the app must not bounce PostgreSQL. After deployment, read back the running image and revision, compare the deployed source-file hashes with the committed files, verify PostgreSQL health and record counts, check Sidekiq/Rails startup logs, exercise the review-generation job lock with a harmless nonexistent submission, and confirm both origin and public readiness latency. Retain the previous image and rollback metadata until those checks pass.
 
+## Transactional Email
+
+Split Signature uses the existing Split Resend account through SMTP. The canonical Mac Keychain entries are `com.split.shared.RESEND_API_KEY` and `com.split.shared.RESEND_FROM_EMAIL`; reuse those values and never rotate the key as part of a Split Signature deploy. Production must render a root-owned `/opt/docuseal/.env` with `SMTP_ADDRESS=smtp.resend.com`, port `587`, username `resend`, the existing Resend key as `SMTP_PASSWORD`, `SMTP_DOMAIN=split-llc.com`, STARTTLS enabled, and the Split Signature sender address. A blank `SMTP_ADDRESS` is unconfigured and must not activate the SMTP delivery path.
+
+Before restarting the app, verify the live Resend domain is still enabled for sending and that the app container can reach the SMTP host. After the app-only deploy, confirm the SMTP settings are nonempty without printing their values, allow the intended Sidekiq retry to drain, and verify a successful mail event. Do not send a synthetic real-recipient message when an intended queued notification already provides end-to-end proof.
+
 ## Portal Document Sync
 
 Primary Split-owned files:
