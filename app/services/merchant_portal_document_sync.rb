@@ -30,9 +30,12 @@ module MerchantPortalDocumentSync
   end
 
   def maybe_generate_review_agreements(submissions)
-    MerchantPortalReviewAgreementGenerator.maybe_generate_for_portal_onboarding(submissions)
+    submission_ids = Array.wrap(submissions).filter_map(&:id)
+    return if submission_ids.empty?
+
+    GenerateMerchantPortalReviewAgreementsJob.perform_async('submission_ids' => submission_ids)
   rescue StandardError => e
-    Rails.logger.warn("[MerchantPortalDocumentSync] review agreement generation failed: #{e.class}: #{e.message}")
+    Rails.logger.warn("[MerchantPortalDocumentSync] review agreement enqueue failed: #{e.class}: #{e.message}")
   end
 
   def archive_submission(submission, archived_at: Time.current)

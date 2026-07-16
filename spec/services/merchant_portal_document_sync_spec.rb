@@ -32,4 +32,14 @@ RSpec.describe MerchantPortalDocumentSync do
     )
     expect(submitter.reload.preferences['portal_signing_url']).to include('agreement=doc-123')
   end
+
+  it 'queues portal review agreement generation instead of running it in the request' do
+    job_class = class_double('GenerateMerchantPortalReviewAgreementsJob').as_stubbed_const
+    submitter.update!(metadata: { 'merchant_id' => 'merchant-123', 'source' => 'merchant_portal_onboarding' })
+
+    expect(job_class).to receive(:perform_async).with('submission_ids' => [submission.id])
+    expect(MerchantPortalReviewAgreementGenerator).not_to receive(:maybe_generate_for_portal_onboarding)
+
+    described_class.sync_submissions([submission], template:)
+  end
 end
