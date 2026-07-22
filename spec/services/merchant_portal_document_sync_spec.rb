@@ -33,6 +33,35 @@ RSpec.describe MerchantPortalDocumentSync do
     expect(submitter.reload.preferences['portal_signing_url']).to include('agreement=doc-123')
   end
 
+  it 'projects the full Split Signature lifecycle for shared and embedded signing' do
+    sent_at = 3.hours.ago
+    opened_at = 2.hours.ago
+    completed_at = 1.hour.ago
+    submitter.update!(sent_at:, opened_at:, completed_at:)
+
+    described_class.sync_submitter(submitter.reload)
+
+    expect(SupabaseClient).to have_received(:upsert_merchant_document).with(
+      hash_including(
+        status: 'signed',
+        sent_at: sent_at.iso8601,
+        opened_at: opened_at.iso8601,
+        signed_at: completed_at.iso8601,
+        last_signature_event_at: completed_at.iso8601
+      )
+    )
+  end
+
+  it 'marks an incomplete past-due submission as expired' do
+    submission.update!(expire_at: 1.minute.ago)
+
+    described_class.sync_submitter(submitter.reload)
+
+    expect(SupabaseClient).to have_received(:upsert_merchant_document).with(
+      hash_including(status: 'expired', expired_at: submission.expire_at.iso8601)
+    )
+  end
+
   it 'queues portal review agreement generation instead of running it in the request' do
     job_class = class_double('GenerateMerchantPortalReviewAgreementsJob').as_stubbed_const
     submitter.update!(metadata: { 'merchant_id' => 'merchant-123', 'source' => 'merchant_portal_onboarding' })

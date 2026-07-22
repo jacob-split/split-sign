@@ -5,7 +5,7 @@ require 'rails_helper'
 RSpec.describe MerchantPortalReviewAgreementGenerator do
   let(:account) { create(:account) }
   let(:author) { create(:user, account:, email: 'admin@split-llc.com') }
-  let(:folder) { create(:template_folder, account:, author:, name: 'v2.0') }
+  let(:folder) { create(:template_folder, account:, author:, name: 'Portal Agreements') }
   let(:source_template) { create(:template, account:, author:, folder:, attachment_count: 0) }
   let(:source_submission) { create(:submission, :with_submitters, template: source_template, created_by_user: author) }
   let(:source_submitter) { source_submission.submitters.first }
@@ -72,11 +72,11 @@ RSpec.describe MerchantPortalReviewAgreementGenerator do
   end
 
   before do
-    create_master_template!(84, 'MPA_payroc')
+    create_master_template!(1, 'Merchant Processing & MLA Agreements')
     create_master_template!(95, 'FRPA_payroc')
     source_submitter.update!(metadata: { 'merchant_id' => 'merchant-abc', 'source' => described_class::PORTAL_ONBOARDING_SOURCE })
 
-    allow(described_class).to receive(:configured_master_template_ids).and_return([84, 95])
+    allow(described_class).to receive(:configured_master_template_ids).and_return([1, 95])
     allow(SupabaseClient).to receive(:fetch_merchant).with('merchant-abc').and_return(merchant)
     allow(SupabaseClient).to receive(:fetch_principals).with('merchant-abc').and_return([principal])
     allow(SupabaseClient).to receive(:fetch_merchant_documents).with('merchant-abc').and_return([])
@@ -87,19 +87,19 @@ RSpec.describe MerchantPortalReviewAgreementGenerator do
     allow(SearchEntries).to receive(:enqueue_reindex) if defined?(SearchEntries)
   end
 
-  it 'creates merchant-specific pending clones, no-email submissions, and portal document rows' do
+  it 'creates merchant-specific Portal Agreements clones, no-email submissions, and portal document rows' do
     result = described_class.call(merchant_id: 'merchant-abc', source_submitter:)
 
     expect(result[:errors]).to eq([])
     expect(result[:created_count]).to eq(2)
 
     clones = Template.where(external_id: [
-      described_class.clone_external_id(84, 'merchant-abc'),
+      described_class.clone_external_id(1, 'merchant-abc'),
       described_class.clone_external_id(95, 'merchant-abc')
     ]).order(:id)
     expect(clones.size).to eq(2)
     expect(clones.map(&:name)).to all(include('beanfish_llc'))
-    expect(clones.map { |clone| clone.folder.name }.uniq).to eq(['pending'])
+    expect(clones.map { |clone| clone.folder.name }.uniq).to eq(['Portal Agreements'])
     expect(clones.map { |clone| clone.preferences['source'] }.uniq).to eq([described_class::GENERATED_SOURCE])
     expect(clones.flat_map(&:fields).select { |field| field['name'] == 'Business Email' }.map { |field| field['default_value'] }.uniq).to eq(['owner@example.com'])
 
@@ -115,6 +115,17 @@ RSpec.describe MerchantPortalReviewAgreementGenerator do
 
     expect(SupabaseClient).to have_received(:upsert_merchant_document).twice
     expect(SupabaseClient).to have_received(:upsert_merchant_document).with(hash_including(merchant_id: 'merchant-abc', status: 'pending')).twice
+  end
+
+
+  it 'rejects master templates outside Portal Agreements' do
+    foreign_folder = create(:template_folder, account:, author:, name: 'Other')
+    template = Template.find(1)
+    template.update!(folder: foreign_folder)
+
+    result = described_class.call(merchant_id: 'merchant-abc', source_submitter:)
+
+    expect(result[:errors]).to include('Master review template 1 is outside Portal Agreements')
   end
 
   it 'is triggered only by portal onboarding submitters' do

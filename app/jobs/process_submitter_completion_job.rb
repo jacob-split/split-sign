@@ -30,6 +30,11 @@ class ProcessSubmitterCompletionJob
 
     enqueue_completed_webhooks(submitter, is_all_completed:)
 
+    # Shared links, API sends, embedded portal signing, and manual UI sends all
+    # converge here. Re-resolve portal context before downstream completion.
+    MerchantPortalDocumentSync.sync_submitter(submitter)
+    submitter.reload
+
     if submitter.metadata&.dig('merchant_id').present?
       ProcessMerchantSigningJob.perform_async('submitter_id' => submitter.id)
     end

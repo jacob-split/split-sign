@@ -13,6 +13,9 @@ class ProcessSubmissionExpiredJob
     return if submission.submitters.where.not(declined_at: nil).exists?
     return unless submission.submitters.exists?(completed_at: nil)
 
+    submitter = MerchantPortalDocumentSync.merchant_submitter_for(submission)
+    MerchantPortalDocumentSync.sync_submitter(submitter) if submitter
+
     WebhookUrls.enqueue_events(submission, 'submission.expired')
   end
 end
