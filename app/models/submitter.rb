@@ -40,6 +40,8 @@
 #  fk_rails_...  (submission_id => submissions.id)
 #
 class Submitter < ApplicationRecord
+  PORTAL_LIFECYCLE_FIELDS = %w[sent_at opened_at completed_at declined_at].freeze
+
   belongs_to :submission
   belongs_to :account
   has_one :template, through: :submission
@@ -68,6 +70,7 @@ class Submitter < ApplicationRecord
   scope :completed, -> { where.not(completed_at: nil) }
 
   after_destroy :anonymize_email_events, if: -> { Docuseal.multitenant? }
+  after_commit :enqueue_portal_lifecycle_sync, if: :portal_lifecycle_changed?
 
   def status
     if declined_at?
@@ -116,6 +119,14 @@ class Submitter < ApplicationRecord
   end
 
   private
+
+  def portal_lifecycle_changed?
+    (previous_changes.keys & PORTAL_LIFECYCLE_FIELDS).any?
+  end
+
+  def enqueue_portal_lifecycle_sync
+    SyncMerchantPortalDocumentLifecycleJob.perform_async('submitter_id' => id)
+  end
 
   def anonymize_email_events
     email_events.each do |event|

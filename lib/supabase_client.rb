@@ -59,17 +59,37 @@ module SupabaseClient
   def upsert_merchant_document(attrs)
     merchant_id = attrs[:merchant_id] || attrs['merchant_id']
     template_id = attrs[:template_id] || attrs['template_id']
+    submission_id = attrs[:submission_id] || attrs['submission_id']
     raise Error, 'merchant_id is required' if merchant_id.blank?
     raise Error, 'template_id is required' if template_id.blank?
 
-    existing = get('/rest/v1/merchant_documents', {
-      'merchant_id' => "eq.#{merchant_id}",
-      'template_id' => "eq.#{template_id}",
-      'archived_at' => 'is.null',
-      'select' => 'id',
-      'order' => 'updated_at.desc',
-      'limit' => '1'
-    })
+    existing = if submission_id.present?
+                 get('/rest/v1/merchant_documents', {
+                   'merchant_id' => "eq.#{merchant_id}",
+                   'template_id' => "eq.#{template_id}",
+                   'submission_id' => "eq.#{submission_id}",
+                   'select' => 'id',
+                   'limit' => '1'
+                 })
+               else
+                 []
+               end
+
+    # Upgrade only an unsigned placeholder produced before Split Signature
+    # returned a submission ID. A later agreement using the same template must
+    # remain a separate historical document.
+    if existing.empty?
+      existing = get('/rest/v1/merchant_documents', {
+        'merchant_id' => "eq.#{merchant_id}",
+        'template_id' => "eq.#{template_id}",
+        'submission_id' => 'is.null',
+        'signed_at' => 'is.null',
+        'archived_at' => 'is.null',
+        'select' => 'id',
+        'order' => 'updated_at.desc',
+        'limit' => '1'
+      })
+    end
 
     body = attrs.compact.merge(updated_at: Time.current.iso8601)
     body[:signed_at] = attrs[:signed_at] if attrs.key?(:signed_at)
@@ -190,7 +210,8 @@ module SupabaseClient
         'select' => 'id,business_name,dba_name,email,business_email',
         'limit' => '2'
       })
-      return rows.first if rows.any?
+      return rows.first if rows.one?
+      return nil if rows.many?
     end
 
     if name.present?

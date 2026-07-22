@@ -5,13 +5,13 @@ require 'set'
 # Creates merchant-specific review agreement templates/submissions when the
 # portal-created onboarding agreements are prepared. This mirrors the current
 # Split website/Split Signature orchestration:
-#   master v2.0 template -> merchant-named pending clone -> field defaults on
+#   Portal Agreements master -> merchant-named Portal Agreements clone -> field defaults on
 #   the clone -> no-email portal submission -> merchant_documents writeback.
 module MerchantPortalReviewAgreementGenerator
-  DEFAULT_MASTER_TEMPLATE_IDS = [84, 85, 87, 78, 91, 94, 95, 96, 103].freeze
-  GENERATED_SOURCE = 'merchant_portal_review_agreements'
+  PORTAL_AGREEMENTS_FOLDER = 'Portal Agreements'
+  DEFAULT_MASTER_TEMPLATE_IDS = [1, 2, 9, 10, 94, 95].freeze
+  GENERATED_SOURCE = 'merchant_portal_agreements'
   PORTAL_ONBOARDING_SOURCE = 'merchant_portal_onboarding'
-  DEFAULT_PENDING_FOLDER = 'pending'
   DEFAULT_SORT_OFFSET = 100
   INTERACTIVE_FIELD_TYPES = Set.new(%w[signature initials stamp image file]).freeze
   ALWAYS_BLANK_NORMALIZED = Set.new(%w[
@@ -56,6 +56,10 @@ module MerchantPortalReviewAgreementGenerator
       master = Template.active.find_by(id: master_template_id)
       unless master
         result[:errors] << "Master review template #{master_template_id} not found"
+        next
+      end
+      unless master.folder&.full_name == PORTAL_AGREEMENTS_FOLDER
+        result[:errors] << "Master review template #{master_template_id} is outside #{PORTAL_AGREEMENTS_FOLDER}"
         next
       end
 
@@ -108,8 +112,11 @@ module MerchantPortalReviewAgreementGenerator
     ENV.fetch('SPLIT_REVIEW_AGREEMENT_SORT_OFFSET', DEFAULT_SORT_OFFSET).to_i
   end
 
-  def pending_folder_name
-    ENV.fetch('SPLIT_REVIEW_AGREEMENT_FOLDER', DEFAULT_PENDING_FOLDER)
+  def output_folder_name
+    configured = ENV['SPLIT_REVIEW_AGREEMENT_FOLDER'].presence
+    return PORTAL_AGREEMENTS_FOLDER if configured.blank? || configured == PORTAL_AGREEMENTS_FOLDER
+
+    raise "SPLIT_REVIEW_AGREEMENT_FOLDER must be #{PORTAL_AGREEMENTS_FOLDER}"
   end
 
   def default_author
@@ -133,7 +140,7 @@ module MerchantPortalReviewAgreementGenerator
       author:,
       external_id:,
       name: clone_name(master, merchant),
-      folder_name: pending_folder_name
+      folder_name: output_folder_name
     )
     clone.preferences = clone.preferences.merge(
       'merchant_portal_review_agreement' => true,

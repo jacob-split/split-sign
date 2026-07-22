@@ -57,10 +57,22 @@ The portal writeback table is Supabase `merchant_documents`. Split Signature upd
 - `template_name`
 - `submission_id`
 - `embed_src`
+- `sent_at`
+- `opened_at`
 - `signed_at`
+- `declined_at`
+- `expired_at`
+- `last_signature_event_at`
 - `status`
 - `archived_at`
 - `sort_order`
+
+Every Split Signature surface uses this same lifecycle: portal embed, shared
+link, API send, Admin Portal send, and direct Split Signature UI send. A
+non-null `submission_id` identifies one historical agreement; sending the same
+template again must create another agreement rather than overwrite the prior
+one. Email-only merchant discovery fails closed when more than one merchant
+shares the address.
 
 ## Signed Document Proof
 
@@ -70,7 +82,16 @@ Signed PDF visibility for Notion and portal users depends on the website downloa
 
 ## Review Agreement Generation
 
-`MerchantPortalReviewAgreementGenerator` creates merchant-specific clones from configured master templates, applies deterministic prefill defaults, creates no-email portal submissions, and writes them back through `MerchantPortalDocumentSync`.
+`MerchantPortalReviewAgreementGenerator` creates merchant-specific clones only
+from active canonical masters in `Portal Agreements`, stores new clones in that
+same folder, applies deterministic prefill defaults, creates no-email portal
+submissions, and writes them back through `MerchantPortalDocumentSync`.
+Existing templates in `pending` are historical records and must not be moved or
+deleted by deployment or backfill.
+
+The canonical master template IDs are `1, 2, 9, 10, 94, 95`: Merchant
+Processing & MLA, Installation Verification, EPI/Cygma Merchant Processing &
+Lease, EPI/Cygma Delivery & Acceptance, LOD, and FRPA/Payroc.
 
 Relevant env:
 

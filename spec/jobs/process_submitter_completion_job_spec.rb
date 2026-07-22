@@ -10,6 +10,7 @@ RSpec.describe ProcessSubmitterCompletionJob do
   before do
     create(:encrypted_config, key: EncryptedConfig::ESIGN_CERTS_KEY,
                               value: GenerateCertificate.call.transform_values(&:to_pem))
+    allow(MerchantPortalDocumentSync).to receive(:sync_submitter)
   end
 
   describe '#perform' do
@@ -26,6 +27,7 @@ RSpec.describe ProcessSubmitterCompletionJob do
       expect(completed_submitter.account_id).to eq(submitter.submission.account_id)
       expect(completed_submitter.template_id).to eq(submitter.submission.template_id)
       expect(completed_submitter.source).to eq(submitter.submission.source)
+      expect(MerchantPortalDocumentSync).to have_received(:sync_submitter).with(submitter)
     end
 
     it 'creates a completed document' do

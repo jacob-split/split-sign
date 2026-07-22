@@ -25,6 +25,17 @@ module MerchantPortalDocumentSync
     []
   end
 
+  def sync_submitter(submitter)
+    submission = submitter.submission
+    template = submission.template
+    return unless template
+
+    context = context_for_submitter(build_context(template), template, submitter)
+    return unless context&.dig(:merchant_id).present?
+
+    sync_submission(submission, template, context, submitter)
+  end
+
   def portal_url_for(submitter)
     submitter.preferences['portal_signing_url'].presence
   end
@@ -98,14 +109,14 @@ module MerchantPortalDocumentSync
     submitter ||= merchant_submitter_for(submission)
     return unless submitter
 
+    lifecycle = lifecycle_attributes(submission, submitter)
     document = SupabaseClient.upsert_merchant_document({
       merchant_id: context[:merchant_id],
       template_id: template.id,
       template_name: context[:template_name],
       submission_id: submitter.submission_id,
       embed_src: "#{Docuseal::CONSOLE_URL}/s/#{submitter.slug}",
-      signed_at: submitter.completed_at&.iso8601,
-      status: submission.archived_at? ? 'archived' : (submitter.completed_at? ? 'signed' : 'pending'),
+      **lifecycle,
       archived_at: submission.archived_at&.iso8601,
       sort_order: context[:sort_order]
     }).first
@@ -122,6 +133,39 @@ module MerchantPortalDocumentSync
     )
 
     document
+  end
+
+  def lifecycle_attributes(submission, submitter)
+    expired_at = submission.expire_at if submission.expired? && !submitter.completed_at? && !submitter.declined_at?
+    event_at = [
+      submission.archived_at,
+      submitter.completed_at,
+      submitter.declined_at,
+      expired_at,
+      submitter.opened_at,
+      submitter.sent_at
+    ].compact.max || submitter.created_at
+
+    {
+      status: lifecycle_status(submission, submitter, expired_at:),
+      sent_at: submitter.sent_at&.iso8601,
+      opened_at: submitter.opened_at&.iso8601,
+      signed_at: submitter.completed_at&.iso8601,
+      declined_at: submitter.declined_at&.iso8601,
+      expired_at: expired_at&.iso8601,
+      last_signature_event_at: event_at&.iso8601
+    }
+  end
+
+  def lifecycle_status(submission, submitter, expired_at: nil)
+    return 'archived' if submission.archived_at?
+    return 'signed' if submitter.completed_at?
+    return 'declined' if submitter.declined_at?
+    return 'expired' if expired_at
+    return 'opened' if submitter.opened_at?
+    return 'sent' if submitter.sent_at?
+
+    'pending'
   end
 
   def submitter_metadata(context)
