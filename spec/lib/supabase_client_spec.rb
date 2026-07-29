@@ -52,4 +52,23 @@ RSpec.describe SupabaseClient do
       expect(described_class.find_merchant_for_document_context(email: 'shared@example.com')).to be_nil
     end
   end
+
+  describe '.execute' do
+    it 'normalizes upstream timeouts so portal submission creation can recover' do
+      http = instance_double(Net::HTTP)
+      allow(Net::HTTP).to receive(:new).and_return(http)
+      allow(http).to receive(:use_ssl=)
+      allow(http).to receive(:open_timeout=)
+      allow(http).to receive(:read_timeout=)
+      allow(http).to receive(:request).and_raise(Net::ReadTimeout)
+
+      expect do
+        described_class.send(
+          :execute,
+          URI.parse('https://example.supabase.co/rest/v1/merchant_documents'),
+          Net::HTTP::Get.new('/')
+        )
+      end.to raise_error(SupabaseClient::Error, 'Supabase request failed: Net::ReadTimeout')
+    end
+  end
 end

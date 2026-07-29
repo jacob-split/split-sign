@@ -290,6 +290,10 @@ module SupabaseClient
     JSON.parse(body)
   rescue JSON::ParserError
     []
+  rescue Net::OpenTimeout, Net::ReadTimeout, SocketError,
+         Errno::ECONNREFUSED, Errno::ECONNRESET,
+         Errno::EHOSTUNREACH, Errno::ENETUNREACH => e
+    raise Error, "Supabase request failed: #{e.class}"
   end
 
   def decode_body(response)
