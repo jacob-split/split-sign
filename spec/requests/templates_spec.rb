@@ -86,6 +86,75 @@ describe 'Templates API' do
     end
   end
 
+  describe 'POST /api/templates/pdf' do
+    it 'preserves readonly portal mappings, typed signatures, and signing-date defaults' do
+      post '/api/templates/pdf',
+           headers: { 'x-auth-token': author.access_token.token },
+           params: {
+             name: 'Mapped portal agreement',
+             folder_name: 'Portal Agreements',
+             roles: ['Merchant'],
+             documents: [{
+               name: 'sample-document.pdf',
+               file: Base64.strict_encode64(Rails.root.join('spec/fixtures/sample-document.pdf').binread),
+               fields: [
+                 {
+                   name: 'legal_business_name',
+                   type: 'text',
+                   role: 'Merchant',
+                   required: false,
+                   readonly: true,
+                   default_value: 'Fixture LLC',
+                   preferences: { data_path: 'merchant.business_name' },
+                   areas: [{ x: 0.1, y: 0.1, w: 0.2, h: 0.03, page: 1 }]
+                 },
+                 {
+                   name: 'merchant_signature',
+                   type: 'signature',
+                   role: 'Merchant',
+                   required: true,
+                   readonly: false,
+                   preferences: { format: 'typed' },
+                   areas: [{ x: 0.1, y: 0.2, w: 0.2, h: 0.03, page: 1 }]
+                 },
+                 {
+                   name: 'merchant_date_signed',
+                   type: 'date',
+                   role: 'Merchant',
+                   required: false,
+                   readonly: true,
+                   default_value: '{{date}}',
+                   preferences: { format: 'MM/DD/YYYY' },
+                   areas: [{ x: 0.1, y: 0.3, w: 0.2, h: 0.03, page: 1 }]
+                 }
+               ]
+             }]
+           }.to_json
+
+      expect(response).to have_http_status(:ok)
+
+      fields = Template.find(response.parsed_body.fetch('id')).fields.index_by { |field| field.fetch('name') }
+
+      expect(fields.fetch('legal_business_name')).to include(
+        'required' => false,
+        'readonly' => true,
+        'default_value' => 'Fixture LLC',
+        'preferences' => include('data_path' => 'merchant.business_name')
+      )
+      expect(fields.fetch('merchant_signature')).to include(
+        'required' => true,
+        'readonly' => false,
+        'preferences' => include('format' => 'typed')
+      )
+      expect(fields.fetch('merchant_date_signed')).to include(
+        'required' => false,
+        'readonly' => true,
+        'default_value' => '{{date}}',
+        'preferences' => include('format' => 'MM/DD/YYYY')
+      )
+    end
+  end
+
   describe 'PUT /api/templates' do
     let(:template) do
       create(:template, account:,

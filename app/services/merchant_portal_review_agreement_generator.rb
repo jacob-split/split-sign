@@ -12,6 +12,7 @@ module MerchantPortalReviewAgreementGenerator
   DEFAULT_MASTER_TEMPLATE_IDS = [1, 2, 9, 10, 94, 95].freeze
   GENERATED_SOURCE = 'merchant_portal_agreements'
   PORTAL_ONBOARDING_SOURCE = 'merchant_portal_onboarding'
+  EXACT_PORTAL_PACKET_STACK = 'onyx_private_client'
   DEFAULT_SORT_OFFSET = 100
   INTERACTIVE_FIELD_TYPES = Set.new(%w[signature initials stamp image file]).freeze
   ALWAYS_BLANK_NORMALIZED = Set.new(%w[
@@ -24,6 +25,7 @@ module MerchantPortalReviewAgreementGenerator
     Array.wrap(submissions).each do |submission|
       submitter = MerchantPortalDocumentSync.merchant_submitter_for(submission)
       next unless portal_onboarding_submitter?(submitter)
+      next if exact_portal_packet_submitter?(submitter)
 
       merchant_id = submitter.metadata&.dig('merchant_id').presence
       next if merchant_id.blank?
@@ -36,6 +38,10 @@ module MerchantPortalReviewAgreementGenerator
 
   def portal_onboarding_submitter?(submitter)
     submitter&.metadata&.dig('source').to_s == PORTAL_ONBOARDING_SOURCE
+  end
+
+  def exact_portal_packet_submitter?(submitter)
+    submitter&.metadata&.dig('agreement_stack_key').to_s == EXACT_PORTAL_PACKET_STACK
   end
 
   def call(merchant_id:, source_submitter: nil)

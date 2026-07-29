@@ -430,6 +430,9 @@ module Api
             'preferences' => (field_params[:preferences] || {}).to_unsafe_h.stringify_keys
           }
 
+          field['readonly'] = field_params[:readonly].in?([true, 'true']) if field_params.key?(:readonly)
+          field['default_value'] = field_params[:default_value] if field_params.key?(:default_value)
+          field['prefillable'] = field_params[:prefillable].in?([true, 'true']) if field_params.key?(:prefillable)
           field['title'] = field_params[:title] if field_params[:title].present?
           field['description'] = field_params[:description] if field_params[:description].present?
 

@@ -19,7 +19,7 @@ class ProcessMerchantSigningJob
     )
 
     active_docs = SupabaseClient.fetch_active_merchant_documents(merchant_id)
-    all_signed = active_docs.present? && active_docs.all? { |doc| signed_document?(doc) }
+    all_signed = active_docs.present? && active_docs.all? { |doc| completed_document?(doc) }
 
     if all_signed
       mark_merchant_complete(merchant_id)
@@ -40,6 +40,13 @@ class ProcessMerchantSigningJob
 
   def signed_document?(document)
     document['signed_at'].present? || SIGNED_DOCUMENT_STATUSES.include?(document['status'].to_s)
+  end
+
+  def completed_document?(document)
+    return false unless signed_document?(document)
+    return true unless document['requires_sms_verification'] == true
+
+    document['sms_verified_at'].present?
   end
 
   def mark_merchant_complete(merchant_id)

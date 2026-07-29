@@ -55,5 +55,26 @@ module Submitters
     def find_safe_value(configs, key)
       configs.find { |e| e.key == key }&.value
     end
+
+    # Portal merchant signatures are acknowledgement fields, not drawn marks.
+    # Work on deep copies so stored template history remains immutable.
+    def typed_only_portal_fields(fields, portal_signing_flow:)
+      return fields unless portal_signing_flow
+
+      Array(fields).map do |field|
+        item = field.deep_dup
+        type = item['type'] || item[:type]
+        next item unless %w[signature initials].include?(type.to_s)
+
+        if item.key?('type') || !item.key?(:type)
+          preferences = item['preferences'] || item[:preferences] || {}
+          item['preferences'] = preferences.stringify_keys.merge('format' => 'typed')
+          item.delete(:preferences)
+        else
+          item[:preferences] = (item[:preferences] || {}).symbolize_keys.merge(format: 'typed')
+        end
+        item
+      end
+    end
   end
 end
