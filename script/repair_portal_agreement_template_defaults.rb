@@ -38,7 +38,7 @@ updates = template_field_names.to_h do |template_id, field_names|
   missing = field_names - matched
   raise "Template #{template_id} is missing fields: #{missing.join(', ')}" if missing.any?
 
-  [template, fields, matched]
+  [template_id, [template, fields, matched]]
 end
 
 if ENV['APPLY'] == '1'
