@@ -91,14 +91,41 @@ deleted by deployment or backfill.
 
 The current default portal masters are `128, 129`: Onyx MPA and Private Client
 Lease Agreement. Template `130`, Private Client Delivery and Acceptance, is
-the later operational replacement for Installation Verification and must not
-be included in the initial packet. Legacy templates `1, 2, 9, 10, 94, 95`
+the operational replacement for Installation Verification. It is generated
+with the two initial agreements and remains independently available at sort
+order 100, but must not be included in or block the initial packet. Legacy
+templates `1, 2, 9, 10, 94, 95`
 remain canonical historical/alternate masters and must not be deleted.
 
 Templates `128` through `130` were created from externally retained,
 SHA-256-pinned source PDFs. All merchant signatures and initials are typed
 acknowledgements, signing dates are signer-generated date fields, and every
 delivery date remains a blank read-only operational field.
+
+The initial Onyx and lease packet uses one Telnyx Verify challenge. Split writes
+the same sent, phone-verified, and completed-verification proof into both native
+submission audit trails. Delivery and Acceptance is a later independent signing
+event and therefore carries its own SMS proof.
+
+Template `128` owns the operator-configured pricing defaults. Portal submission
+generation must copy fields mapped as `constant.template_default`; it must not
+replace those values with blanks. The current defaults include 1.75% plus
+$0.05 for credit, check card, Amex, and PIN debit, plus the configured voice
+authorization, batch, chargeback, PCI, pre-arbitration, chargeback-reversal,
+monthly-minimum, AVS, and per-item fees. Changes made to those master defaults
+must flow through without hard-coding a different submission value.
+
+Template `129` likewise preserves the operator-configured lease-payment
+default. `script/repair_portal_agreement_template_defaults.rb` verifies both
+masters in dry-run mode and changes only their `data_path` values when invoked
+with `APPLY=1`.
+
+Self-service portal generation remains fail-closed until all required merchant
+profile data is complete. Admin ad hoc generation may explicitly mark only
+missing template fields with `portal_signer_completion`; Split Signature permits
+those allowlisted fields alongside typed signatures while continuing to reject
+changes to populated read-only fields. Required checkbox choice groups use
+`portal_signer_completion_group` and must have exactly one selected value.
 
 Relevant env:
 

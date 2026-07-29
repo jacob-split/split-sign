@@ -360,7 +360,7 @@
                         class="base-checkbox !h-7 !w-7"
                         :required="field.required"
                         :checked="!!values[field.uuid]"
-                        @click="[scrollIntoField(field), values[field.uuid] = !values[field.uuid]]"
+                        @click="[scrollIntoField(field), setCheckboxValue(field)]"
                       >
                       <span
                         v-if="field.title"
@@ -640,6 +640,10 @@ const isEmpty = (obj) => {
 }
 
 const PORTAL_SIGNING_FIELD_TYPES = ['signature', 'initials']
+const isPortalSigningActionField = (field) => (
+  PORTAL_SIGNING_FIELD_TYPES.includes(field.type) ||
+  field.preferences?.portal_signer_completion === true
+)
 
 export default {
   name: 'SubmissionForm',
@@ -1044,6 +1048,7 @@ export default {
     isButtonDisabled () {
       if (this.recalculateButtonDisabledKey) {
         return this.isSubmitting ||
+        (this.portalSigningFlow && !this.portalCompletionGroupsValid(this.currentStepFields)) ||
         (this.currentField?.required && ['image', 'file', 'multiple'].includes(this.currentField.type) && !this.values[this.currentField.uuid]?.length) ||
         (this.currentField?.required && this.currentField.type === 'signature' && !this.values[this.currentField.uuid]?.length && this.$refs.currentStep && !this.$refs.currentStep.isSignatureStarted) ||
         (this.currentField?.required && this.currentField.type === 'initials' && !this.values[this.currentField.uuid]?.length && this.$refs.currentStep && !this.$refs.currentStep.isInitialsStarted)
@@ -1067,7 +1072,7 @@ export default {
 
       const sortedFields = this.fields.reduce((acc, f) => {
         if (this.portalSigningFlow) {
-          if (!f.readonly && PORTAL_SIGNING_FIELD_TYPES.includes(f.type)) {
+          if (!f.readonly && isPortalSigningActionField(f)) {
             acc.push(f)
           }
         } else if (f.type === 'verification' || f.type === 'kba') {
@@ -1266,6 +1271,53 @@ export default {
   methods: {
     t (key) {
       return this.i18n[key] || i18n[this.language?.toLowerCase()]?.[key] || i18n[this.browserLanguage]?.[key] || i18n.en[key] || key
+    },
+    portalCompletionGroupsValid (fields) {
+      const groups = fields.reduce((acc, field) => {
+        const group = field.preferences?.portal_signer_completion_group
+
+        if (group && field.preferences?.portal_signer_completion_group_required === true) {
+          acc[group] ||= []
+          acc[group].push(field)
+        }
+
+        return acc
+      }, {})
+
+      return Object.values(groups).every((groupFields) => {
+        const choices = groupFields.reduce((acc, field) => {
+          const choice = field.preferences?.portal_signer_completion_group_choice || field.uuid
+
+          acc[choice] ||= []
+          acc[choice].push(field)
+
+          return acc
+        }, {})
+        const selectedChoices = Object.values(choices).filter((choiceFields) => {
+          return choiceFields.some((field) => !!this.values[field.uuid])
+        })
+
+        return selectedChoices.length === 1 &&
+          selectedChoices[0].every((field) => !!this.values[field.uuid])
+      })
+    },
+    setCheckboxValue (field) {
+      const group = field.preferences?.portal_signer_completion_group
+      const groupRequired = field.preferences?.portal_signer_completion_group_required === true
+
+      if (group && groupRequired) {
+        const selectedChoice = field.preferences?.portal_signer_completion_group_choice || field.uuid
+
+        this.fields
+          .filter((item) => item.preferences?.portal_signer_completion_group === group)
+          .forEach((item) => {
+            const itemChoice = item.preferences?.portal_signer_completion_group_choice || item.uuid
+
+            this.values[item.uuid] = itemChoice === selectedChoice
+          })
+      } else {
+        this.values[field.uuid] = !this.values[field.uuid]
+      }
     },
     onOrientationChange (event) {
       this.orientation = event.target.type

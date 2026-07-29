@@ -84,6 +84,8 @@ module Submitters
         submitter.values = maybe_remove_condition_values(submitter, required_field_uuids_acc:, portal_flow:)
       end
 
+      validate_portal_completion_groups!(submitter) if portal_flow && validate_required
+
       submitter.values = submitter.values.transform_values do |v|
         v == '{{date}}' ? Time.current.in_time_zone(submitter.account.timezone).to_date.to_s : v
       end
@@ -149,7 +151,7 @@ module Submitters
       values.each do |key, value|
         field = submitter.submission.template_fields.find { |e| e['uuid'] == key }
 
-        next if portal_flow && (!field || !PORTAL_ACTION_FIELD_TYPES.include?(field['type']))
+        next if portal_flow && (!field || !portal_action_field?(field))
 
         validate_value!(value, field, params, submitter, request)
       end
@@ -295,7 +297,7 @@ module Submitters
 
     def required_editable_field?(field, portal_flow: false)
       return false if NONEDITABLE_FIELD_TYPES.include?(field['type'])
-      return false if portal_flow && !PORTAL_ACTION_FIELD_TYPES.include?(field['type'])
+      return false if portal_flow && !portal_action_field?(field)
 
       field['required'].present? && field['readonly'].blank?
     end
@@ -315,12 +317,46 @@ module Submitters
       action_field_uuids =
         submitter.submission.template_fields.each_with_object(Set.new) do |field, acc|
           next if field['submitter_uuid'] != submitter.uuid
-          next unless PORTAL_ACTION_FIELD_TYPES.include?(field['type'])
+          next unless portal_action_field?(field)
 
           acc.add(field['uuid'])
         end
 
       values.select { |uuid, _value| action_field_uuids.include?(uuid) }
+    end
+
+    def portal_action_field?(field)
+      PORTAL_ACTION_FIELD_TYPES.include?(field['type']) ||
+        field.dig('preferences', 'portal_signer_completion') == true
+    end
+
+    def validate_portal_completion_groups!(submitter)
+      grouped_fields =
+        submitter.submission.template_fields
+                 .select do |field|
+                   field['submitter_uuid'] == submitter.uuid &&
+                     field['readonly'].blank? &&
+                     field.dig('preferences', 'portal_signer_completion') == true &&
+                     field.dig('preferences', 'portal_signer_completion_group').present? &&
+                     field.dig('preferences', 'portal_signer_completion_group_required') == true
+                 end
+                 .group_by { |field| field.dig('preferences', 'portal_signer_completion_group') }
+
+      grouped_fields.each_value do |fields|
+        choices = fields.group_by do |field|
+          field.dig('preferences', 'portal_signer_completion_group_choice').presence || field['uuid']
+        end
+        selected_choices = choices.values.select do |choice_fields|
+          choice_fields.any? { |field| ActiveModel::Type::Boolean.new.cast(submitter.values[field['uuid']]) }
+        end
+        selected_choice_complete =
+          selected_choices.one? &&
+          selected_choices.first.all? do |field|
+            ActiveModel::Type::Boolean.new.cast(submitter.values[field['uuid']])
+          end
+
+        raise RequiredFieldError, fields.first['uuid'] unless selected_choice_complete
+      end
     end
 
     def check_field_areas_attachments(field, attachments_index)
