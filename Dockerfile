@@ -77,6 +77,7 @@ COPY --chown=docuseal:docuseal ./config ./config
 COPY --chown=docuseal:docuseal ./db/migrate ./db/migrate
 COPY --chown=docuseal:docuseal ./log ./log
 COPY --chown=docuseal:docuseal ./lib ./lib
+COPY --chown=docuseal:docuseal ./script ./script
 COPY --chown=docuseal:docuseal ./public ./public
 COPY --chown=docuseal:docuseal ./tmp ./tmp
 COPY --chown=docuseal:docuseal LICENSE README.md Rakefile config.ru .version ./
