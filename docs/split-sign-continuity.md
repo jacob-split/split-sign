@@ -89,9 +89,16 @@ submissions, and writes them back through `MerchantPortalDocumentSync`.
 Existing templates in `pending` are historical records and must not be moved or
 deleted by deployment or backfill.
 
-The canonical master template IDs are `1, 2, 9, 10, 94, 95`: Merchant
-Processing & MLA, Installation Verification, EPI/Cygma Merchant Processing &
-Lease, EPI/Cygma Delivery & Acceptance, LOD, and FRPA/Payroc.
+The current default portal masters are `128, 129`: Onyx MPA and Private Client
+Lease Agreement. Template `130`, Private Client Delivery and Acceptance, is
+the later operational replacement for Installation Verification and must not
+be included in the initial packet. Legacy templates `1, 2, 9, 10, 94, 95`
+remain canonical historical/alternate masters and must not be deleted.
+
+Templates `128` through `130` were created from externally retained,
+SHA-256-pinned source PDFs. All merchant signatures and initials are typed
+acknowledgements, signing dates are signer-generated date fields, and every
+delivery date remains a blank read-only operational field.
 
 Relevant env:
 
