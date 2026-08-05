@@ -13,7 +13,7 @@ class MerchantSubmissionsController < ApplicationController
   end
 
   def search_merchants
-    merchants = SupabaseClient.fetch_merchants(params[:query])
+    merchants = ControlPlaneClient.fetch_merchants(params[:query])
 
     render json: merchants.map { |m|
       {
@@ -24,13 +24,13 @@ class MerchantSubmissionsController < ApplicationController
         email: m['email']
       }
     }
-  rescue SupabaseClient::Error => e
+  rescue ControlPlaneClient::Error => e
     render json: { error: e.message }, status: :unprocessable_content
   end
 
   def preview
-    merchant = SupabaseClient.fetch_merchant(params[:merchant_id])
-    principals = SupabaseClient.fetch_principals(params[:merchant_id])
+    merchant = ControlPlaneClient.fetch_merchant(params[:merchant_id])
+    principals = ControlPlaneClient.fetch_principals(params[:merchant_id])
     principal = principals&.first || {}
 
     MerchantPii.decrypt_merchant(merchant)
@@ -44,7 +44,7 @@ class MerchantSubmissionsController < ApplicationController
     ).call
 
     template_fields = template.fields.map { |f| { 'name' => f['name'], 'type' => f['type'] } }
-    saved_mappings = SupabaseClient.fetch_template_field_mappings(template.id)
+    saved_mappings = ControlPlaneClient.fetch_template_field_mappings(template.id)
 
     result = MerchantFieldMapper.get_field_map_for_template(
       template.id, merchant, principal, template_fields, saved_mappings
@@ -66,7 +66,7 @@ class MerchantSubmissionsController < ApplicationController
       merchant_email: merchant['email'],
       principal_name: principal.present? ? "#{principal['first_name']} #{principal['last_name']}".strip : nil
     }
-  rescue SupabaseClient::Error => e
+  rescue ControlPlaneClient::Error => e
     render json: { error: e.message }, status: :unprocessable_content
   end
 
@@ -76,7 +76,7 @@ class MerchantSubmissionsController < ApplicationController
     agent_only_fields = params[:agent_only_fields] || []
     data_paths = params[:data_paths]&.to_unsafe_h || {}
     merchant_id = params[:merchant_id]
-    merchant = merchant_id.present? ? SupabaseClient.fetch_merchant(merchant_id) : {}
+    merchant = merchant_id.present? ? ControlPlaneClient.fetch_merchant(merchant_id) : {}
 
     submitter_params = (params[:submitters]&.to_unsafe_h || {}).sort_by { |k, _| k.to_i }.map(&:last)
 
@@ -155,38 +155,46 @@ class MerchantSubmissionsController < ApplicationController
       params: { 'send_email' => params[:send_email] != '0', 'send_completed_email' => true }
     )
 
-    MerchantPortalDocumentSync.sync_submissions(submissions, template:, merchant_id:, template_name: template.name)
-
-    WebhookUrls.enqueue_events(submissions, 'submission.created')
-    Submissions.send_signature_requests(submissions)
-    SearchEntries.enqueue_reindex(submissions)
+    synced_documents = MerchantPortalDocumentSync.sync_submissions(
+      submissions,
+      template:,
+      merchant_id:,
+      template_name: template.name
+    )
+    if merchant_id.present? && synced_documents.length != submissions.length
+      raise ControlPlaneClient::Error,
+            "Persisted #{synced_documents.length} of #{submissions.length} merchant submissions"
+    end
 
     submitter = submissions.first&.submitters&.first
 
     if submitter
-      SupabaseClient.update_merchant(merchant_id, { onboarding_status: 'awaiting_signature' }) if merchant_id.present?
+      ControlPlaneClient.update_merchant(merchant_id, { onboarding_status: 'awaiting_signature' }) if merchant_id.present?
 
-      # Save field mappings for this template (so next send auto-fills the same way)
+      # Save field mappings before delivery so a control-plane error cannot
+      # leave the merchant in a signature loop with an untracked document.
       save_field_mappings(template, data_paths, agent_only_fields) if data_paths.present?
 
       submitter.update!(preferences: submitter.preferences.merge('only_required_fields' => false))
     end
+
+    WebhookUrls.enqueue_events(submissions, 'submission.created')
+    Submissions.send_signature_requests(submissions)
+    SearchEntries.enqueue_reindex(submissions)
 
     merchant_name = submitter_params.first&.dig('name') || params[:merchant_name]
     redirect_to template_path(template), notice: "Sent to #{merchant_name} for signature"
   rescue Submissions::CreateFromSubmitters::BaseError => e
     redirect_to new_merchant_submission_path(template_id: params[:template_id]),
                 alert: "Error creating submission: #{e.message}"
-  rescue SupabaseClient::Error => e
+  rescue ControlPlaneClient::Error => e
     redirect_to template_path(params[:template_id]),
-                notice: "Submission created but Supabase update failed: #{e.message}"
+                alert: "Submission was not sent because the Split control plane could not persist it: #{e.message}"
   end
 
   private
 
   def save_field_mappings(template, data_paths, agent_only_fields)
-    SupabaseClient.upsert_template_field_mappings(template.id, data_paths, agent_only_fields, template_name: template.name)
-  rescue SupabaseClient::Error => e
-    Rails.logger.warn("[MerchantSubmissions] Failed to save field mappings: #{e.message}")
+    ControlPlaneClient.upsert_template_field_mappings(template.id, data_paths, agent_only_fields, template_name: template.name)
   end
 end

@@ -2,7 +2,7 @@
 
 require 'rails_helper'
 
-RSpec.describe SupabaseClient do
+RSpec.describe ControlPlaneClient do
   describe '.upsert_merchant_document' do
     it 'updates the exact submission without reusing another agreement from the same template' do
       allow(described_class).to receive(:get).with(
@@ -65,10 +65,10 @@ RSpec.describe SupabaseClient do
       expect do
         described_class.send(
           :execute,
-          URI.parse('https://example.supabase.co/rest/v1/merchant_documents'),
+          URI.parse('https://control.example.com/rest/v1/merchant_documents'),
           Net::HTTP::Get.new('/')
         )
-      end.to raise_error(SupabaseClient::Error, 'Supabase request failed: Net::ReadTimeout')
+      end.to raise_error(ControlPlaneClient::Error, 'Split control plane request failed: Net::ReadTimeout')
     end
   end
 end

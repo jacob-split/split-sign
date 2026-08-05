@@ -12,9 +12,9 @@ RSpec.describe MerchantPortalDocumentSync do
 
   before do
     submitter.update!(metadata: { 'merchant_id' => 'merchant-123', 'source' => 'manual_send' })
-    allow(SupabaseClient).to receive(:find_generated_docuseal_artifact).and_return(nil)
-    allow(SupabaseClient).to receive(:find_merchant_for_document_context).and_return(nil)
-    allow(SupabaseClient).to receive(:upsert_merchant_document).and_return([{ 'id' => 'doc-123' }])
+    allow(ControlPlaneClient).to receive(:find_generated_docuseal_artifact).and_return(nil)
+    allow(ControlPlaneClient).to receive(:find_merchant_for_document_context).and_return(nil)
+    allow(ControlPlaneClient).to receive(:upsert_merchant_document).and_return([{ 'id' => 'doc-123' }])
     allow(MerchantPortalReviewAgreementGenerator).to receive(:maybe_generate_for_portal_onboarding)
   end
 
@@ -22,7 +22,7 @@ RSpec.describe MerchantPortalDocumentSync do
     documents = described_class.sync_submissions([submission], template:)
 
     expect(documents.size).to eq(1)
-    expect(SupabaseClient).to have_received(:upsert_merchant_document).with(
+    expect(ControlPlaneClient).to have_received(:upsert_merchant_document).with(
       hash_including(
         merchant_id: 'merchant-123',
         template_id: template.id,
@@ -33,6 +33,15 @@ RSpec.describe MerchantPortalDocumentSync do
     expect(submitter.reload.preferences['portal_signing_url']).to include('agreement=doc-123')
   end
 
+  it 'fails closed when the control plane cannot persist the submission' do
+    allow(ControlPlaneClient).to receive(:upsert_merchant_document)
+      .and_raise(ControlPlaneClient::Error, 'unavailable')
+
+    expect do
+      described_class.sync_submissions([submission], template:)
+    end.to raise_error(ControlPlaneClient::Error, 'unavailable')
+  end
+
   it 'projects the full Split Signature lifecycle for shared and embedded signing' do
     sent_at = 3.hours.ago
     opened_at = 2.hours.ago
@@ -41,7 +50,7 @@ RSpec.describe MerchantPortalDocumentSync do
 
     described_class.sync_submitter(submitter.reload)
 
-    expect(SupabaseClient).to have_received(:upsert_merchant_document).with(
+    expect(ControlPlaneClient).to have_received(:upsert_merchant_document).with(
       hash_including(
         status: 'signed',
         sent_at: sent_at.iso8601,
@@ -57,7 +66,7 @@ RSpec.describe MerchantPortalDocumentSync do
 
     described_class.sync_submitter(submitter.reload)
 
-    expect(SupabaseClient).to have_received(:upsert_merchant_document).with(
+    expect(ControlPlaneClient).to have_received(:upsert_merchant_document).with(
       hash_including(status: 'expired', expired_at: submission.expire_at.iso8601)
     )
   end

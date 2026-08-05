@@ -46,7 +46,7 @@ module SplitAgentContract
         title: 'Portal document sync',
         status: 'ready',
         description: 'Split Signature writes submission state back to Supabase merchant_documents.',
-        proof: ['MerchantPortalDocumentSync', 'SupabaseClient.upsert_merchant_document']
+        proof: ['MerchantPortalDocumentSync', 'ControlPlaneClient.upsert_merchant_document']
       },
       {
         id: 'signed_document_writeback',

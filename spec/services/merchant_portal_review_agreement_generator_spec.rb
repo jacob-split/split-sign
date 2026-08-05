@@ -81,11 +81,11 @@ RSpec.describe MerchantPortalReviewAgreementGenerator do
     allow(described_class).to receive(:configured_master_template_ids).and_return(
       [primary_master_template_id, secondary_master_template_id]
     )
-    allow(SupabaseClient).to receive(:fetch_merchant).with('merchant-abc').and_return(merchant)
-    allow(SupabaseClient).to receive(:fetch_principals).with('merchant-abc').and_return([principal])
-    allow(SupabaseClient).to receive(:fetch_merchant_documents).with('merchant-abc').and_return([])
-    allow(SupabaseClient).to receive(:fetch_template_field_mappings).and_return(nil)
-    allow(SupabaseClient).to receive(:upsert_merchant_document) do |attrs|
+    allow(ControlPlaneClient).to receive(:fetch_merchant).with('merchant-abc').and_return(merchant)
+    allow(ControlPlaneClient).to receive(:fetch_principals).with('merchant-abc').and_return([principal])
+    allow(ControlPlaneClient).to receive(:fetch_merchant_documents).with('merchant-abc').and_return([])
+    allow(ControlPlaneClient).to receive(:fetch_template_field_mappings).and_return(nil)
+    allow(ControlPlaneClient).to receive(:upsert_merchant_document) do |attrs|
       [{ 'id' => "doc-#{attrs[:template_id]}" }]
     end
     allow(SearchEntries).to receive(:enqueue_reindex) if defined?(SearchEntries)
@@ -117,8 +117,8 @@ RSpec.describe MerchantPortalReviewAgreementGenerator do
       expect(submitter.metadata['source']).to eq(described_class::GENERATED_SOURCE)
     end
 
-    expect(SupabaseClient).to have_received(:upsert_merchant_document).twice
-    expect(SupabaseClient).to have_received(:upsert_merchant_document).with(hash_including(merchant_id: 'merchant-abc', status: 'pending')).twice
+    expect(ControlPlaneClient).to have_received(:upsert_merchant_document).twice
+    expect(ControlPlaneClient).to have_received(:upsert_merchant_document).with(hash_including(merchant_id: 'merchant-abc', status: 'pending')).twice
   end
 
 

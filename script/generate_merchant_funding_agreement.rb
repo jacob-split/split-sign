@@ -36,8 +36,8 @@ raise 'Restored LOD master 94 is missing' unless lod_master
 raise 'FRPA master 95 has no fields' if frpa_master.fields.blank?
 raise 'LOD master 94 has no fields' if lod_master.fields.blank?
 
-merchant = SupabaseClient.fetch_merchant(merchant_id)
-principal = SupabaseClient.fetch_principals(merchant_id)&.first || {}
+merchant = ControlPlaneClient.fetch_merchant(merchant_id)
+principal = ControlPlaneClient.fetch_principals(merchant_id)&.first || {}
 MerchantPortalReviewAgreementGenerator.decrypt_records!(merchant, principal)
 raise "Merchant not found: #{merchant_id}" if merchant.blank?
 

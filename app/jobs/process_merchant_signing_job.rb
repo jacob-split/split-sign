@@ -13,18 +13,18 @@ class ProcessMerchantSigningJob
 
     signed_at = submitter.completed_at || Time.current
 
-    SupabaseClient.update_merchant_document(
+    ControlPlaneClient.update_merchant_document(
       submitter.submission_id,
       { signed_at: signed_at.iso8601, status: 'signed' }
     )
 
-    active_docs = SupabaseClient.fetch_active_merchant_documents(merchant_id)
+    active_docs = ControlPlaneClient.fetch_active_merchant_documents(merchant_id)
     all_signed = active_docs.present? && active_docs.all? { |doc| completed_document?(doc) }
 
     if all_signed
       mark_merchant_complete(merchant_id)
 
-      merchant = SupabaseClient.fetch_merchant(merchant_id)
+      merchant = ControlPlaneClient.fetch_merchant(merchant_id)
 
       MerchantNotificationMailer.signing_complete(
         merchant_name: merchant['business_name'],
@@ -32,8 +32,6 @@ class ProcessMerchantSigningJob
         documents: active_docs.map { |d| { name: d['template_name'], signed_at: d['signed_at'] } }
       ).deliver_later!
     end
-  rescue SupabaseClient::Error => e
-    Rails.logger.error("[ProcessMerchantSigningJob] Supabase error for submitter #{params['submitter_id']}: #{e.message}")
   end
 
   private
@@ -50,10 +48,10 @@ class ProcessMerchantSigningJob
   end
 
   def mark_merchant_complete(merchant_id)
-    SupabaseClient.update_merchant(merchant_id, { onboarding_status: 'complete', stage: 'in_review' })
-  rescue SupabaseClient::Error => e
+    ControlPlaneClient.update_merchant(merchant_id, { onboarding_status: 'complete', stage: 'in_review' })
+  rescue ControlPlaneClient::Error => e
     raise unless e.message.match?(/stage/i)
 
-    SupabaseClient.update_merchant(merchant_id, { onboarding_status: 'complete' })
+    ControlPlaneClient.update_merchant(merchant_id, { onboarding_status: 'complete' })
   end
 end

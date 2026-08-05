@@ -47,14 +47,14 @@ module MerchantPortalReviewAgreementGenerator
   def call(merchant_id:, source_submitter: nil)
     return { attempted: false, skipped: true, created_count: 0, existing_count: 0, errors: ['merchant_id is required'] } if merchant_id.blank?
 
-    merchant = SupabaseClient.fetch_merchant(merchant_id)
-    principal = SupabaseClient.fetch_principals(merchant_id)&.first || {}
+    merchant = ControlPlaneClient.fetch_merchant(merchant_id)
+    principal = ControlPlaneClient.fetch_principals(merchant_id)&.first || {}
     decrypt_records!(merchant, principal)
 
     author = source_submitter&.submission&.created_by_user || default_author
     raise 'No DocuSeal user available for generated review agreements' unless author
 
-    existing_documents = SupabaseClient.fetch_merchant_documents(merchant_id)
+    existing_documents = ControlPlaneClient.fetch_merchant_documents(merchant_id)
     active_template_ids = existing_documents.map { |doc| doc['template_id'].to_i }.to_set
     result = { attempted: true, skipped: false, created_count: 0, existing_count: 0, template_ids: [], errors: [] }
 
@@ -220,7 +220,7 @@ module MerchantPortalReviewAgreementGenerator
   def apply_prefill_defaults!(clone, master, merchant, principal)
     normalized_merchant = normalize_merchant_for_mapping(merchant)
     template_fields = clone.fields.map { |field| { 'name' => field['name'], 'type' => field['type'] } }
-    saved_mappings = SupabaseClient.fetch_template_field_mappings(master.id)
+    saved_mappings = ControlPlaneClient.fetch_template_field_mappings(master.id)
     mapped = MerchantFieldMapper.get_field_map_for_template(master.id, normalized_merchant, principal || {}, template_fields, saved_mappings)
     values_by_name = mapped[:values] || {}
     agent_only_fields = Set.new(mapped[:agent_only_fields] || [])

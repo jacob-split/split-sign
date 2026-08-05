@@ -5,7 +5,7 @@ require 'json'
 require 'zlib'
 require 'stringio'
 
-module SupabaseClient
+module ControlPlaneClient
   Error = Class.new(StandardError)
 
   module_function
@@ -262,7 +262,7 @@ module SupabaseClient
   end
 
   def build_uri(path, params = {})
-    url = "#{supabase_url}#{path}"
+    url = "#{control_plane_url}#{path}"
     url += "?#{URI.encode_www_form(params)}" if params.any?
     URI.parse(url)
   end
@@ -283,7 +283,7 @@ module SupabaseClient
     response = http.request(request)
 
     unless response.is_a?(Net::HTTPSuccess)
-      raise Error, "Supabase API error (#{response.code}): #{response.body}"
+      raise Error, "Split control plane API error (#{response.code})"
     end
 
     body = decode_body(response)
@@ -293,7 +293,7 @@ module SupabaseClient
   rescue Net::OpenTimeout, Net::ReadTimeout, SocketError,
          Errno::ECONNREFUSED, Errno::ECONNRESET,
          Errno::EHOSTUNREACH, Errno::ENETUNREACH => e
-    raise Error, "Supabase request failed: #{e.class}"
+    raise Error, "Split control plane request failed: #{e.class}"
   end
 
   def decode_body(response)
@@ -307,11 +307,11 @@ module SupabaseClient
     end
   end
 
-  def supabase_url
-    ENV.fetch('SUPABASE_URL') { raise Error, 'SUPABASE_URL not configured' }
+  def control_plane_url
+    ENV.fetch('CONTROL_PLANE_URL') { raise Error, 'CONTROL_PLANE_URL not configured' }
   end
 
   def service_role_key
-    ENV.fetch('SUPABASE_SERVICE_ROLE_KEY') { raise Error, 'SUPABASE_SERVICE_ROLE_KEY not configured' }
+    ENV.fetch('CONTROL_PLANE_SERVICE_TOKEN') { raise Error, 'CONTROL_PLANE_SERVICE_TOKEN not configured' }
   end
 end

@@ -20,9 +20,6 @@ module MerchantPortalDocumentSync
     maybe_generate_review_agreements(submissions)
 
     documents
-  rescue SupabaseClient::Error => e
-    Rails.logger.warn("[MerchantPortalDocumentSync] Supabase sync failed: #{e.message}")
-    []
   end
 
   def sync_submitter(submitter)
@@ -50,25 +47,19 @@ module MerchantPortalDocumentSync
   end
 
   def archive_submission(submission, archived_at: Time.current)
-    SupabaseClient.archive_merchant_document(submission.id, archived_at:)
-  rescue SupabaseClient::Error => e
-    Rails.logger.warn("[MerchantPortalDocumentSync] Supabase archive sync failed: #{e.message}")
+    ControlPlaneClient.archive_merchant_document(submission.id, archived_at:)
   end
 
   def archive_template(template, archived_at: Time.current)
-    SupabaseClient.archive_merchant_documents_for_template(template.id, archived_at:)
-  rescue SupabaseClient::Error => e
-    Rails.logger.warn("[MerchantPortalDocumentSync] Supabase template archive sync failed: #{e.message}")
+    ControlPlaneClient.archive_merchant_documents_for_template(template.id, archived_at:)
   end
 
   def unarchive_template(template)
-    SupabaseClient.unarchive_merchant_documents_for_template(template.id)
-  rescue SupabaseClient::Error => e
-    Rails.logger.warn("[MerchantPortalDocumentSync] Supabase template restore sync failed: #{e.message}")
+    ControlPlaneClient.unarchive_merchant_documents_for_template(template.id)
   end
 
   def build_context(template, merchant_id: nil, template_name: nil)
-    generated_context = SupabaseClient.find_generated_docuseal_artifact(template.id) || {}
+    generated_context = ControlPlaneClient.find_generated_docuseal_artifact(template.id) || {}
     {
       merchant_id: merchant_id.presence || generated_context[:merchant_id],
       merchant_identity_id: generated_context[:merchant_identity_id],
@@ -86,7 +77,7 @@ module MerchantPortalDocumentSync
     context = context.merge(context_from_submitter_metadata(submitter))
     return context if context[:merchant_id].present?
 
-    merchant = SupabaseClient.find_merchant_for_document_context(
+    merchant = ControlPlaneClient.find_merchant_for_document_context(
       email: submitter.email,
       name: merchant_name_from_template(template.name)
     )
@@ -110,7 +101,7 @@ module MerchantPortalDocumentSync
     return unless submitter
 
     lifecycle = lifecycle_attributes(submission, submitter)
-    document = SupabaseClient.upsert_merchant_document({
+    document = ControlPlaneClient.upsert_merchant_document({
       merchant_id: context[:merchant_id],
       template_id: template.id,
       template_name: context[:template_name],

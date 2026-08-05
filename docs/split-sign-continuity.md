@@ -48,10 +48,10 @@ Primary Split-owned files:
 - `app/services/merchant_portal_document_sync.rb`
 - `app/services/merchant_portal_review_agreement_generator.rb`
 - `app/jobs/process_merchant_signing_job.rb`
-- `lib/supabase_client.rb`
+- `lib/control_plane_client.rb`
 - `lib/merchant_field_mapper.rb`
 
-The portal writeback table is Supabase `merchant_documents`. Split Signature updates:
+The portal writeback table is the Split control-plane `merchant_documents` table. Split Signature updates:
 
 - `template_id`
 - `template_name`

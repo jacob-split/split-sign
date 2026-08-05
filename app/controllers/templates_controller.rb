@@ -90,14 +90,14 @@ class TemplatesController < ApplicationController
       ).to_json
 
     if params[:merchant_id].present?
-      merchant = SupabaseClient.fetch_merchant(params[:merchant_id])
-      principals = SupabaseClient.fetch_principals(params[:merchant_id])
+      merchant = ControlPlaneClient.fetch_merchant(params[:merchant_id])
+      principals = ControlPlaneClient.fetch_principals(params[:merchant_id])
       principal = principals&.first || {}
       MerchantPii.decrypt_merchant(merchant)
       MerchantPii.decrypt_principal(principal) if principal.present?
 
       template_fields = @template.fields.map { |f| { 'name' => f['name'], 'type' => f['type'] } }
-      saved_mappings = SupabaseClient.fetch_template_field_mappings(@template.id)
+      saved_mappings = ControlPlaneClient.fetch_template_field_mappings(@template.id)
       result = MerchantFieldMapper.get_field_map_for_template(
         @template.id, merchant, principal, template_fields, saved_mappings
       )
