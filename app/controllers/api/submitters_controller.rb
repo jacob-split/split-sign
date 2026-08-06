@@ -2,6 +2,12 @@
 
 module Api
   class SubmittersController < ApiBaseController
+    UPDATE_ERRORS = [
+      Submitters::NormalizeValues::BaseError,
+      Submitters::SubmitValues::ValidationError,
+      DownloadUtils::UnableToDownload
+    ].freeze
+
     load_and_authorize_resource :submitter
 
     def index
@@ -74,7 +80,7 @@ module Api
 
       render json: Submitters::SerializeForApi.call(@submitter, with_template: false, with_urls: true,
                                                                 with_events: false, params:)
-    rescue Submitters::NormalizeValues::BaseError, DownloadUtils::UnableToDownload => e
+    rescue *UPDATE_ERRORS => e
       Rollbar.warning(e) if defined?(Rollbar)
 
       render json: { error: e.message }, status: :unprocessable_content
@@ -139,6 +145,8 @@ module Api
     end
 
     def maybe_assign_completed_attributes(submitter, attrs)
+      Submitters::SubmitValues.validate_portal_sms_verification!(submitter) if attrs[:completed]
+
       submitter.completed_at = attrs[:completed] ? Time.current : submitter.completed_at
 
       if attrs[:completed]

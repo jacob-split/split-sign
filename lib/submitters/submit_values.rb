@@ -8,6 +8,9 @@ module Submitters
     VARIABLE_REGEXP = /\{\{?(\w+)\}\}?/
     NONEDITABLE_FIELD_TYPES = %w[stamp heading strikethrough].freeze
     PORTAL_ACTION_FIELD_TYPES = %w[signature initials].freeze
+    PORTAL_SMS_VERIFICATION_ERROR = 'SMS verification is required before signing'
+    PORTAL_SMS_VERIFICATION_EVENT_TYPES = %w[send_2fa_sms phone_verified complete_verification].freeze
+    PORTAL_SMS_VERIFICATION_STACKS = %w[onyx_private_client].freeze
 
     STRFTIME_MAP = {
       'hour' => '%-k',
@@ -66,6 +69,8 @@ module Submitters
     end
 
     def assign_completed_attributes(submitter, request, validate_required: true, portal_flow: portal_signing_flow?(submitter, request))
+      validate_portal_sms_verification!(submitter)
+
       submitter.completed_at = Time.current
       submitter.ip = request.remote_ip
       submitter.ua = request.user_agent
@@ -311,6 +316,33 @@ module Submitters
       portal_referer = request.referer.to_s.match?(%r{\Ahttps://(www\.)?(split-llc\.com|ccsplit\.org)/portal/})
 
       portal_origin || portal_referer
+    end
+
+    def portal_sms_verification_required?(submitter)
+      metadata = submitter.metadata || {}
+
+      return false if metadata['merchant_id'].blank?
+
+      ActiveModel::Type::Boolean.new.cast(metadata['requires_sms_verification']) ||
+        PORTAL_SMS_VERIFICATION_STACKS.include?(metadata['agreement_stack_key'].to_s)
+    end
+
+    def validate_portal_sms_verification!(submitter)
+      return submitter unless portal_sms_verification_required?(submitter)
+
+      events = submitter.submission_events.where(event_type: PORTAL_SMS_VERIFICATION_EVENT_TYPES).to_a
+      complete_proof = PORTAL_SMS_VERIFICATION_EVENT_TYPES.all? do |event_type|
+        events.any? do |event|
+          event.event_type == event_type &&
+            event.data['channel'] == 'sms' &&
+            event.data['provider'] == 'telnyx_verify' &&
+            event.data['external_event_id'].present?
+        end
+      end
+
+      raise ValidationError, PORTAL_SMS_VERIFICATION_ERROR unless complete_proof
+
+      submitter
     end
 
     def filter_portal_action_values(values, submitter)

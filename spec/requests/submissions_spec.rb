@@ -117,6 +117,27 @@ describe 'Submission API' do
       expect(submitter.completed_at).not_to be_nil
     end
 
+    it 'rejects a completed portal agreement created without SMS verification proof' do
+      post '/api/submissions', headers: { 'x-auth-token': author.access_token.token }, params: {
+        template_id: templates[0].id,
+        submitters: [{
+          role: 'First Party',
+          email: 'john.doe@example.com',
+          completed: true,
+          metadata: {
+            merchant_id: 'merchant_123',
+            agreement_stack_key: 'onyx_private_client',
+            requires_sms_verification: true
+          }
+        }]
+      }.to_json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body).to eq(
+        'error' => Submitters::SubmitValues::PORTAL_SMS_VERIFICATION_ERROR
+      )
+    end
+
     it 'creates a submission when some submitter roles are not provided' do
       post '/api/submissions', headers: { 'x-auth-token': author.access_token.token }, params: {
         template_id: multiple_submitters_template.id,

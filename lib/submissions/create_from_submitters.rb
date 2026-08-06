@@ -345,9 +345,18 @@ module Submissions
       submitter.sent_at =
         submitter.preferences['send_email'] != false && email.present? && is_order_sent ? Time.current : nil
 
-      assign_completed_attributes(submitter) if submitter.completed_at?
+      if submitter.completed_at?
+        validate_completed_portal_sms!(submitter)
+        assign_completed_attributes(submitter)
+      end
 
       submitter
+    end
+
+    def validate_completed_portal_sms!(submitter)
+      Submitters::SubmitValues.validate_portal_sms_verification!(submitter)
+    rescue Submitters::SubmitValues::ValidationError => e
+      raise BaseError, e.message
     end
 
     def find_phone_field(submission, values)

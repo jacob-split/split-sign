@@ -110,6 +110,27 @@ describe 'Submitter API' do
       expect(submitter.status).to eq('completed')
       expect(submitter.completed_at).not_to be_nil
     end
+
+    it 'rejects API completion of a portal agreement without SMS verification proof' do
+      submitter = create(:submission, :with_submitters,
+                         template: templates[0],
+                         created_by_user: author).submitters.first
+      submitter.update!(metadata: {
+                          'merchant_id' => 'merchant_123',
+                          'agreement_stack_key' => 'onyx_private_client',
+                          'requires_sms_verification' => true
+                        })
+
+      put "/api/submitters/#{submitter.id}", headers: { 'x-auth-token': author.access_token.token }, params: {
+        completed: true
+      }.to_json
+
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.parsed_body).to eq(
+        'error' => Submitters::SubmitValues::PORTAL_SMS_VERIFICATION_ERROR
+      )
+      expect(submitter.reload.completed_at).to be_nil
+    end
   end
 
   private

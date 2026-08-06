@@ -105,7 +105,10 @@ delivery date remains a blank read-only operational field.
 The initial Onyx and lease packet uses one Telnyx Verify challenge. Split writes
 the same sent, phone-verified, and completed-verification proof into both native
 submission audit trails. Delivery and Acceptance is a later independent signing
-event and therefore carries its own SMS proof.
+event and therefore carries its own SMS proof. Split Signature rejects final
+completion for every SMS-gated portal submission unless all three provider-backed
+events are already attached to that exact submitter, so a direct signing link
+cannot bypass the portal challenge.
 
 Template `128` owns the operator-configured pricing defaults. Portal submission
 generation must copy fields mapped as `constant.template_default`; it must not
