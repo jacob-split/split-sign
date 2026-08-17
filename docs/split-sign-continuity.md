@@ -6,40 +6,42 @@ This is the current contract for Split Signature / DocuSeal document generation,
 
 - Source repo: `jacob-split/split-sign`
 - Branch: `main`
-- Local path: `/Users/jacob/Split/Split_dev/split-sign`
-- Runtime host: `gizmo-gateway`
-- Runtime path: `/opt/docuseal`
+- Authoritative local checkout: `/home/jacob/Split/src/split-sign`
+- Runtime host: `ultramarine`
+- Runtime state root: `/srv/split-target/docuseal`
+- App container: `split-target-docuseal-app-1`
+- Database container: `split-target-docuseal-postgres-1`
+- Redis container: `split-target-docuseal-redis-1`
 - Production URL: `https://sign.split-llc.com`
+- Current app image source revision is read from OCI label `org.opencontainers.image.revision`; the live container must match a reviewed Split Sign commit.
 
-The runtime tree is not the source of truth. Update GitHub `main`, deploy deliberately, and verify the live runtime path.
+The runtime tree and Docker volumes are deployment state, not source authority. Make changes in the Surface checkout, commit/push them, deploy deliberately through the current `split-target` runtime process, and verify the running image revision before considering the release complete. Do not use retired `/opt/docuseal`, `gizmo-gateway`, or Mac `Split_dev` paths.
 
 ## Production Deployment
 
-Build a commit-pinned image and record the full source revision in both the image OCI labels and `/opt/docuseal/.split-source-revision`. Keep a rollback copy of the prior compose/runtime metadata under `/opt/docuseal/releases/<revision>/rollback` before changing the live app.
+The current Surface deployment is a containerized `split-target-docuseal` stack with root-owned secrets under `/etc/split-target/secrets/`, persistent Docker volumes for application data/PostgreSQL/Redis, and route services `split-target-docuseal-app-proxy.service` plus `split-target-route-docuseal.service`. There is no authoritative host-side `/opt/docuseal/docker-compose.gizmo.yml` workflow anymore.
 
-The production compose environment is root-owned. Use `sudo` for compose operations instead of changing ownership or copying credentials. For an app-only release, preserve PostgreSQL and deploy only the app service:
+Before a release, capture the current app image/revision and database/application state. Deploy only a reviewed commit-pinned app image; do not replace PostgreSQL or Redis for an app-only source release. After deployment:
+
+1. Verify `split-target-docuseal-app-1`, PostgreSQL, and Redis are running/healthy.
+2. Verify the app container OCI revision equals the reviewed Split Sign commit.
+3. Verify `https://sign.split-llc.com` and the loopback route through the current Surface route services.
+4. Check Rails/Sidekiq startup logs and the harmless review-generation lock probe from `/app`.
+5. Verify portal document writeback and existing signed-document state without printing secrets or merchant PII.
+
+The live app environment is root-owned in `/etc/split-target/secrets/docuseal-app.env`. Reuse the configured Resend SMTP and control-plane credentials; never copy them into the Git checkout, print them, or rotate them as an incidental deploy step.
+
+For container-side Rails probes use the current app container, for example:
 
 ```sh
-sudo docker compose -f /opt/docuseal/docker-compose.gizmo.yml up -d --no-deps --no-build app
-```
-
-Do not omit `--no-deps`; recreating the app must not bounce PostgreSQL. After deployment, read back the running image and revision, compare the deployed source-file hashes with the committed files, verify PostgreSQL health and record counts, check Sidekiq/Rails startup logs, exercise the review-generation job lock with a harmless nonexistent submission, and confirm both origin and public readiness latency. Retain the previous image and rollback metadata until those checks pass.
-
-The VM host does not provide Ruby outside the application container. Use the installed host Python runtime for any atomic root-owned dotenv update. If the shared VM's classic Docker builder stalls on a tiny overlay, stop after the first failed build and recheck I/O pressure. A safe fallback is to derive the same commit-pinned image with `docker create`, `docker cp`, and `docker commit`, set the full OCI revision label, then compare all deployed file hashes before use; do not loop the builder or install another dependency tree.
-
-The container's configured working directory is the persisted `/data/docuseal` volume, while the Rails application and `Gemfile` are under `/app`. Run the harmless review-generation lock probe from `/app` and pass the current hash-shaped job payload:
-
-```sh
-app_id="$(sudo docker compose -f /opt/docuseal/docker-compose.gizmo.yml ps -q app)"
-sudo docker exec -w /app "$app_id" bundle exec rails runner \
+app_id="$(docker ps -q -f name=^split-target-docuseal-app-1$)"
+docker exec -w /app "$app_id" bundle exec rails runner \
   "GenerateMerchantPortalReviewAgreementsJob.new.perform({'submission_ids'=>[-999999]}); puts 'review_lock_probe=passed'"
 ```
 
 ## Transactional Email
 
-Split Signature uses the existing Split Resend account through SMTP. The canonical Mac Keychain entries are `com.split.shared.RESEND_API_KEY` and `com.split.shared.RESEND_FROM_EMAIL`; reuse those values and never rotate the key as part of a Split Signature deploy. Production must render a root-owned `/opt/docuseal/.env` with `SMTP_ADDRESS=smtp.resend.com`, port `587`, username `resend`, the existing Resend key as `SMTP_PASSWORD`, `SMTP_DOMAIN=split-llc.com`, STARTTLS enabled, and the Split Signature sender address. A blank `SMTP_ADDRESS` is unconfigured and must not activate the SMTP delivery path.
-
-Before restarting the app, verify the live Resend domain is still enabled for sending and that the app container can reach the SMTP host. After the app-only deploy, confirm the SMTP settings are nonempty without printing their values, allow the intended Sidekiq retry to drain, and verify a successful mail event. Do not send a synthetic real-recipient message when an intended queued notification already provides end-to-end proof.
+Split Signature uses the configured Split Resend SMTP values from `/etc/split-target/secrets/docuseal-app.env`. The runtime must have nonempty SMTP host, username, password, domain, sender, TLS, and timeout settings. Verify them by key presence and a real queued delivery when one already exists; do not print values or send an unnecessary synthetic message.
 
 ## Portal Document Sync
 

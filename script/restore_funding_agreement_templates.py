@@ -26,8 +26,8 @@ from pathlib import Path
 
 ROLE = "Merchant"
 DEFAULT_API_BASE = "http://127.0.0.1:3000"
-DEFAULT_TOKEN_PATH = "/home/ubuntu/.split-sign-api-token"
-DEFAULT_CONTAINER = "docuseal-app-1"
+DEFAULT_TOKEN_PATH = None
+DEFAULT_CONTAINER = "split-target-docuseal-app-1"
 
 
 def parse_args() -> argparse.Namespace:
@@ -35,7 +35,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--frpa-pdf", required=True, type=Path)
     parser.add_argument("--lod-pdf", required=True, type=Path)
     parser.add_argument("--api-base", default=DEFAULT_API_BASE)
-    parser.add_argument("--token-path", type=Path, default=Path(DEFAULT_TOKEN_PATH))
+    parser.add_argument("--token-path", type=Path, default=DEFAULT_TOKEN_PATH)
     parser.add_argument("--container", default=DEFAULT_CONTAINER)
     parser.add_argument("--force", action="store_true")
     return parser.parse_args()
@@ -359,6 +359,8 @@ puts({{ id: template.id, fields: template.fields.size, schema: template.schema.s
 
 def main() -> int:
     args = parse_args()
+    if args.token_path is None:
+        raise SystemExit("--token-path is required; use the current protected Split Sign API token source")
     for path in (args.frpa_pdf, args.lod_pdf, args.token_path):
         if not path.is_file():
             raise FileNotFoundError(path)

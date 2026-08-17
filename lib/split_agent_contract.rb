@@ -3,7 +3,7 @@
 module SplitAgentContract
   module_function
 
-  VERSION = '2026-06-25'
+  VERSION = '2026-08-17'
 
   def contract
     {
@@ -16,12 +16,12 @@ module SplitAgentContract
         source: {
           repo: 'https://github.com/jacob-split/split-sign',
           branch: 'main',
-          localPath: '/Users/jacob/Split/Split_dev/split-sign'
+          localPath: '/home/jacob/Split/src/split-sign'
         },
         productionUrls: ['https://sign.split-llc.com'],
         runtime: {
-          host: 'gizmo-gateway',
-          path: '/opt/docuseal'
+          host: 'ultramarine',
+          path: '/srv/split-target/docuseal'
         },
         docs: ['AGENTS.md', 'docs/split-sign-continuity.md']
       },
@@ -74,7 +74,7 @@ module SplitAgentContract
 
   def readiness
     checks = [
-      { id: 'runtime_path_registered', status: 'pass', message: 'Runtime path is /opt/docuseal on gizmo-gateway.' },
+      { id: 'runtime_path_registered', status: 'pass', message: 'Runtime is the split-target DocuSeal stack on ultramarine with state rooted at /srv/split-target/docuseal.' },
       { id: 'portal_sync_registered', status: 'pass', message: 'MerchantPortalDocumentSync is present.' },
       { id: 'signed_job_registered', status: 'pass', message: 'ProcessMerchantSigningJob is present.' },
       { id: 'live_mutations_blocked', status: 'pass', message: 'No live signing mutation is callable through public agent endpoints.' }
