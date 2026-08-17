@@ -13,7 +13,7 @@ This is the current contract for Split Signature / DocuSeal document generation,
 - Database container: `split-target-docuseal-postgres-1`
 - Redis container: `split-target-docuseal-redis-1`
 - Production URL: `https://sign.split-llc.com`
-- Current app image source revision is read from OCI label `org.opencontainers.image.revision`; the live container must match a reviewed Split Sign commit.
+- Current app image source revision is read from OCI label `org.opencontainers.image.revision`; it must match the reviewed application-code commit used for the deployed image. Documentation/operations-only commits may legitimately be newer without forcing an app rebuild.
 
 The runtime tree and Docker volumes are deployment state, not source authority. Make changes in the Surface checkout, commit/push them, deploy deliberately through the current `split-target` runtime process, and verify the running image revision before considering the release complete. Do not use retired `/opt/docuseal`, `gizmo-gateway`, or Mac `Split_dev` paths.
 
@@ -24,7 +24,7 @@ The current Surface deployment is a containerized `split-target-docuseal` stack 
 Before a release, capture the current app image/revision and database/application state. Deploy only a reviewed commit-pinned app image; do not replace PostgreSQL or Redis for an app-only source release. After deployment:
 
 1. Verify `split-target-docuseal-app-1`, PostgreSQL, and Redis are running/healthy.
-2. Verify the app container OCI revision equals the reviewed Split Sign commit.
+2. Verify the app container OCI revision equals the reviewed application-code commit for that image; do not require a rebuild solely because documentation/operations metadata advanced.
 3. Verify `https://sign.split-llc.com` and the loopback route through the current Surface route services.
 4. Check Rails/Sidekiq startup logs and the harmless review-generation lock probe from `/app`.
 5. Verify portal document writeback and existing signed-document state without printing secrets or merchant PII.
