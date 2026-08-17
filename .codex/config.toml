@@ -1,16 +1,6 @@
 [mcp]
 remote_mcp_client_enabled = true
 
-[mcp_servers.gbrain]
-url = "https://openclaw-gateway.tail27d90c.ts.net:3131/mcp"
-startup_timeout_sec = 30
-tool_timeout_sec = 120
-
-# .codex/cloud-setup.sh writes an http_headers block here when a Cloud secret is
-# present. This env-backed fallback keeps the template secret-free in git.
-[mcp_servers.gbrain.env_http_headers]
-Authorization = "GBRAIN_MCP_AUTHORIZATION"
-
 [memories]
 generate_memories = true
 no_memories_if_mcp_or_web_search = false

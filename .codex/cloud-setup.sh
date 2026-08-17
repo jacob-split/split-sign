@@ -16,52 +16,10 @@ if [ -d "$repo_root/.agents/skills" ]; then
   find "$repo_root/.agents/skills" -mindepth 1 -maxdepth 1 -type d -exec cp -R {} "$codex_home/skills/" \;
 fi
 
-normalize_bearer() {
-  if [ -n "${GBRAIN_MCP_AUTHORIZATION:-}" ]; then
-    printf '%s\n' "$GBRAIN_MCP_AUTHORIZATION"
-    return 0
-  fi
-
-  if [ -n "${GBRAIN_MCP_BEARER_TOKEN:-}" ]; then
-    case "$GBRAIN_MCP_BEARER_TOKEN" in
-      Bearer\ *) printf '%s\n' "$GBRAIN_MCP_BEARER_TOKEN" ;;
-      *) printf 'Bearer %s\n' "$GBRAIN_MCP_BEARER_TOKEN" ;;
-    esac
-  fi
-}
-
 write_codex_config() {
-  local auth_header
-  local gbrain_url
-
-  auth_header="$(normalize_bearer || true)"
-  gbrain_url="${GBRAIN_MCP_URL:-https://openclaw-gateway.tail27d90c.ts.net:3131/mcp}"
-
-  cat > "$codex_home/config.toml" <<TOML
+  cat > "$codex_home/config.toml" <<'TOML'
 [mcp]
 remote_mcp_client_enabled = true
-
-[mcp_servers.gbrain]
-url = "$gbrain_url"
-startup_timeout_sec = 30
-tool_timeout_sec = 120
-TOML
-
-  if [ -n "$auth_header" ]; then
-    cat >> "$codex_home/config.toml" <<TOML
-
-[mcp_servers.gbrain.http_headers]
-Authorization = "$auth_header"
-TOML
-  else
-    cat >> "$codex_home/config.toml" <<'TOML'
-
-[mcp_servers.gbrain.env_http_headers]
-Authorization = "GBRAIN_MCP_AUTHORIZATION"
-TOML
-  fi
-
-  cat >> "$codex_home/config.toml" <<'TOML'
 
 [memories]
 generate_memories = true
@@ -130,7 +88,7 @@ maybe_start_tailscale() {
   if ! command -v tailscale >/dev/null 2>&1; then
     if command -v curl >/dev/null 2>&1; then
       curl -fsSL --connect-timeout 10 --max-time 120 https://tailscale.com/install.sh | sh || {
-        echo "warning: tailscale install failed; GBrain may be unreachable from Cloud" >&2
+        echo "warning: tailscale install failed; remote private-network resources may be unavailable from Cloud" >&2
         return 0
       }
     else
@@ -180,45 +138,8 @@ EOF
   fi
 }
 
-check_gbrain() {
-  local auth_header
-  local curl_status
-  local stats_url
-
-  if ! command -v curl >/dev/null 2>&1; then
-    echo "warning: curl is unavailable; skipped GBrain reachability check" >&2
-    return 0
-  fi
-
-  auth_header="$(normalize_bearer || true)"
-  stats_url="${GBRAIN_MCP_STATS_URL:-https://openclaw-gateway.tail27d90c.ts.net:3131/admin/api/stats}"
-
-  if [ -f "$codex_home/cloud-env.sh" ]; then
-    # shellcheck disable=SC1090
-    . "$codex_home/cloud-env.sh"
-  fi
-
-  if [ -n "$auth_header" ]; then
-    curl_status=0
-    curl -fsS --connect-timeout 5 --max-time 15 -H "Authorization: $auth_header" "$stats_url" >/dev/null || curl_status=$?
-  else
-    curl_status=0
-    curl -fsS --connect-timeout 5 --max-time 15 "$stats_url" >/dev/null || curl_status=$?
-  fi
-
-  if [ "$curl_status" -eq 0 ]; then
-    echo "GBrain reachable from Codex Cloud setup."
-  elif [ "${REQUIRE_GBRAIN:-0}" = "1" ]; then
-    echo "error: GBrain is required but not reachable. Check GBRAIN_MCP_AUTHORIZATION, GBRAIN_MCP_BEARER_TOKEN, TAILSCALE_AUTHKEY, and network access." >&2
-    return 1
-  else
-    echo "warning: GBrain is not reachable yet. The Cloud agent should report the missing secret/network condition instead of using stale memory." >&2
-  fi
-}
-
 write_codex_config
 install_curated_skills
 maybe_start_tailscale
-check_gbrain
 
 echo "Codex Cloud setup complete for $repo_name. CODEX_HOME=$codex_home"

@@ -9,4 +9,4 @@ This repo contains Split signing and document workflow code. Inspect existing Ra
 
 Treat signing links, generated documents, webhooks, and merchant/customer data as production-sensitive. Do not send live signing workflows or mutate merchant/customer state unless Jacob explicitly approves live execution in the active thread.
 
-Use GBrain for prior Split signing decisions and cross-session context before relying on local notes.
+Use current project context and native Codex memory for prior Split signing decisions and cross-session context. Use Macro when broader stored operational-source retrieval is needed; read originating services for current facts.
