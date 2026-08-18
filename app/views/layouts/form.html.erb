@@ -11,7 +11,8 @@
       <%= javascript_pack_tag 'form', defer: true %>
     <% end %>
     <%= stylesheet_pack_tag 'form', media: 'all' %>
-  </head>
+      <script src="/split-observability.js" data-split-observability="v1"></script>
+</head>
   <body>
     <%= yield %>
   </body>

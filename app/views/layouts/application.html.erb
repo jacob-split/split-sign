@@ -17,7 +17,8 @@
       <link href="<%= canonical_url %>" rel="canonical">
     <% end %>
     <%= stylesheet_pack_tag 'application', media: 'all' %>
-  </head>
+      <script src="/split-observability.js" data-split-observability="v1"></script>
+</head>
   <body>
     <% if params[:modal].present? %>
       <% url_params = Rails.application.routes.recognize_path(params[:modal], method: :get) %>
