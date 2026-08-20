@@ -6,9 +6,9 @@ Before any nontrivial task, review the available session skills and the repo/glo
 
 Surface Linux is the primary local development and execution environment for this repository. The authoritative local checkout is `/home/jacob/Split/src/split-sign`; do not redirect normal work to retired Gizmo/Ubuntu paths or stale macOS checkouts. The Mac remains an Apple-specific/user-facing peer when a task genuinely requires macOS.
 
-Current project context and native Codex memory are the default continuity layer. Use Macro for stored operational-source retrieval and read originating services directly for current facts. Do not recreate GBrain or another retired duplicate memory/indexing layer. In Codex Cloud, run `bash .codex/cloud-setup.sh` when expected local config or skills are missing.
+Current conversation and live source/runtime state are authoritative. For substantive work, use GEE `continuity_start` with catalog project `split-sign`; reach Memorix only through GEE for current work, and use Deja only as historical evidence. Use Macro for stored operational-source retrieval and read originating services directly for current facts. Do not recreate GBrain or another retired duplicate memory/indexing layer. In Codex Cloud, run `bash .codex/cloud-setup.sh` when expected local config or skills are missing.
 
-For Cloud runs, this repo intentionally carries `.codex/cloud-setup.sh`, `.codex/config.toml`, and `.agents/skills/*` so the cloud environment can hydrate the same native-memory and skill behavior used by the current project. Keep secrets out of git.
+For Cloud runs, this repo intentionally carries `.codex/cloud-setup.sh`, `.codex/config.toml`, and `.agents/skills/*` so the cloud environment can hydrate the same GEE/continuity and skill behavior used by the current project. Keep secrets out of git.
 
 ## Split Sign Runtime
 
