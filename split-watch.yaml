@@ -1,0 +1,43 @@
+version: 1
+product: split-sign
+services:
+  - id: split-target-docuseal-postgres
+    runtime: docker
+    repair_class: immediate
+    safe_runbooks:
+      - restart-docker-container
+    grouping:
+      root: split-sign-runtime
+      suppress_children_while_root_active: true
+    thresholds:
+      high: 1
+      medium: 1
+    known_benign: []
+  - id: split-target-docuseal-redis-1
+    runtime: docker
+    repair_class: immediate
+    safe_runbooks:
+      - restart-docker-container
+    grouping:
+      root: split-sign-runtime
+      suppress_children_while_root_active: true
+    thresholds:
+      high: 1
+      medium: 1
+    known_benign: []
+  - id: split-target-docuseal-app-1
+    runtime: docker
+    health: https://sign.split-llc.com/
+    dependencies:
+      - split-target-docuseal-postgres
+      - split-target-docuseal-redis-1
+    repair_class: immediate
+    safe_runbooks:
+      - restart-docker-container
+    grouping:
+      root: split-sign-runtime
+      suppress_children_while_root_active: true
+    thresholds:
+      high: 1
+      medium: 1
+    known_benign: []
