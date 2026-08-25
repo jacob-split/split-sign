@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+container=split-target-docuseal-app-1
+network=split-target-docuseal-data
+
+for _ in {1..30}; do
+  ip=$(docker inspect "$container" --format "{{with index .NetworkSettings.Networks \"$network\"}}{{.IPAddress}}{{end}}" 2>/dev/null || true)
+  if [[ "$ip" =~ ^172\.30\.61\.[0-9]+$ ]]; then
+    exec /usr/sbin/socat TCP-LISTEN:13100,bind=127.0.0.1,reuseaddr,fork "TCP:${ip}:3000"
+  fi
+  sleep 1
+done
+
+echo "Split Signature app container did not acquire its expected private-network address" >&2
+exit 1

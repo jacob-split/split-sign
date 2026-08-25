@@ -6,6 +6,13 @@ services:
     repair_class: immediate
     safe_runbooks:
       - restart-docker-container
+    recovery_dependents:
+      - split-target-docuseal-app-1
+    required_containers:
+      - split-target-docuseal-postgres
+      - split-target-docuseal-redis-1
+      - split-target-docuseal-app-1
+    validation_url: https://sign.split-llc.com/
     grouping:
       root: split-sign-runtime
       suppress_children_while_root_active: true
@@ -18,6 +25,13 @@ services:
     repair_class: immediate
     safe_runbooks:
       - restart-docker-container
+    recovery_dependents:
+      - split-target-docuseal-app-1
+    required_containers:
+      - split-target-docuseal-postgres
+      - split-target-docuseal-redis-1
+      - split-target-docuseal-app-1
+    validation_url: https://sign.split-llc.com/
     grouping:
       root: split-sign-runtime
       suppress_children_while_root_active: true
@@ -34,6 +48,11 @@ services:
     repair_class: immediate
     safe_runbooks:
       - restart-docker-container
+    required_containers:
+      - split-target-docuseal-postgres
+      - split-target-docuseal-redis-1
+      - split-target-docuseal-app-1
+    validation_url: https://sign.split-llc.com/
     grouping:
       root: split-sign-runtime
       suppress_children_while_root_active: true

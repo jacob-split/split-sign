@@ -1,0 +1,16 @@
+[Unit]
+Description=Split target DocuSeal loopback proxy
+After=docker.service
+Requires=docker.service
+
+[Service]
+User=docuseal-target
+Group=docuseal-target
+ExecStart=/usr/local/libexec/split-target-docuseal-app-proxy
+Restart=always
+RestartSec=2
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
