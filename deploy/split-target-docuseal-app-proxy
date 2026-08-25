@@ -3,14 +3,29 @@ set -euo pipefail
 
 container=split-target-docuseal-app-1
 network=split-target-docuseal-data
+state=/run/split-target-docuseal-app-proxy/target
 
-for _ in {1..30}; do
-  ip=$(docker inspect "$container" --format "{{with index .NetworkSettings.Networks \"$network\"}}{{.IPAddress}}{{end}}" 2>/dev/null || true)
-  if [[ "$ip" =~ ^172\.30\.61\.[0-9]+$ ]]; then
+case "${1:-}" in
+  resolve)
+    for _ in {1..30}; do
+      ip=$(docker inspect "$container" --format "{{with index .NetworkSettings.Networks \"$network\"}}{{.IPAddress}}{{end}}" 2>/dev/null || true)
+      if [[ "$ip" =~ ^172\.30\.61\.[0-9]+$ ]]; then
+        printf '%s\n' "$ip" >"$state"
+        chmod 0644 "$state"
+        exit 0
+      fi
+      sleep 1
+    done
+    echo "Split Signature app container did not acquire its expected private-network address" >&2
+    exit 1
+    ;;
+  proxy)
+    ip=$(<"$state")
+    [[ "$ip" =~ ^172\.30\.61\.[0-9]+$ ]] || exit 1
     exec /usr/sbin/socat TCP-LISTEN:13100,bind=127.0.0.1,reuseaddr,fork "TCP:${ip}:3000"
-  fi
-  sleep 1
-done
-
-echo "Split Signature app container did not acquire its expected private-network address" >&2
-exit 1
+    ;;
+  *)
+    echo "usage: $0 resolve|proxy" >&2
+    exit 2
+    ;;
+esac

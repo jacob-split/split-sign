@@ -6,7 +6,10 @@ Requires=docker.service
 [Service]
 User=docuseal-target
 Group=docuseal-target
-ExecStart=/usr/local/libexec/split-target-docuseal-app-proxy
+RuntimeDirectory=split-target-docuseal-app-proxy
+RuntimeDirectoryMode=0755
+ExecStartPre=+/usr/local/libexec/split-target-docuseal-app-proxy resolve
+ExecStart=/usr/local/libexec/split-target-docuseal-app-proxy proxy
 Restart=always
 RestartSec=2
 NoNewPrivileges=true
