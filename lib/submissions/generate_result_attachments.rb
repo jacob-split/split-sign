@@ -260,7 +260,7 @@ module Submissions
 
           font = pdf.fonts.add(font_name, variant: font_variant, custom_encoding: font_name.in?(DEFAULT_FONTS))
 
-          value = submitter.values[field['uuid']]
+          value = FieldRenderValue.call(field, submitter.values[field['uuid']])
           value = field['default_value'] if field['type'] == 'heading'
           value = field['default_value'] if field['type'] == 'strikethrough' && value.nil? && field['conditions'].blank?
 
