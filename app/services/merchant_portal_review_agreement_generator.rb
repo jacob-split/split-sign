@@ -13,6 +13,7 @@ module MerchantPortalReviewAgreementGenerator
   GENERATED_SOURCE = 'merchant_portal_agreements'
   PORTAL_ONBOARDING_SOURCE = 'merchant_portal_onboarding'
   EXACT_PORTAL_PACKET_STACK = 'onyx_private_client'
+  PORTAL_MANAGED_STACKS = %w[onyx_private_client default_payroc_tcg epi_cygma_advantage].freeze
   DEFAULT_SORT_OFFSET = 100
   INTERACTIVE_FIELD_TYPES = Set.new(%w[signature initials stamp image file]).freeze
   ALWAYS_BLANK_NORMALIZED = Set.new(%w[
@@ -41,7 +42,7 @@ module MerchantPortalReviewAgreementGenerator
   end
 
   def exact_portal_packet_submitter?(submitter)
-    submitter&.metadata&.dig('agreement_stack_key').to_s == EXACT_PORTAL_PACKET_STACK
+    PORTAL_MANAGED_STACKS.include?(submitter&.metadata&.dig('agreement_stack_key').to_s)
   end
 
   def call(merchant_id:, source_submitter: nil)

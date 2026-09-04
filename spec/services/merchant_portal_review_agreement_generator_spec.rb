@@ -149,4 +149,12 @@ RSpec.describe MerchantPortalReviewAgreementGenerator do
     expect(described_class).not_to receive(:call)
     described_class.maybe_generate_for_portal_onboarding([source_submission])
   end
+  %w[default_payroc_tcg epi_cygma_advantage].each do |stack|
+    it "does not append unselected review clones to the portal-managed #{stack} package" do
+      source_submitter.update!(metadata: source_submitter.metadata.merge('agreement_stack_key' => stack))
+      expect(described_class).not_to receive(:call)
+      described_class.maybe_generate_for_portal_onboarding([source_submission])
+    end
+  end
+
 end
