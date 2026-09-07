@@ -20,7 +20,7 @@ module SplitAgentContract
         },
         productionUrls: ['https://sign.split-llc.com'],
         runtime: {
-          host: 'ultramarine',
+          host: 'omarchy',
           path: '/srv/split-target/docuseal'
         },
         docs: ['AGENTS.md', 'docs/split-sign-continuity.md']
@@ -74,7 +74,7 @@ module SplitAgentContract
 
   def readiness
     checks = [
-      { id: 'runtime_path_registered', status: 'pass', message: 'Runtime is the split-target DocuSeal stack on ultramarine with state rooted at /srv/split-target/docuseal.' },
+      { id: 'runtime_path_registered', status: 'pass', message: 'Runtime is the split-target DocuSeal stack on omarchy with state rooted at /srv/split-target/docuseal.' },
       { id: 'portal_sync_registered', status: 'pass', message: 'MerchantPortalDocumentSync is present.' },
       { id: 'signed_job_registered', status: 'pass', message: 'ProcessMerchantSigningJob is present.' },
       { id: 'live_mutations_blocked', status: 'pass', message: 'No live signing mutation is callable through public agent endpoints.' }

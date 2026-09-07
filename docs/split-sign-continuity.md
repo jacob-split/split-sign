@@ -7,7 +7,7 @@ This is the current contract for Split Signature / DocuSeal document generation,
 - Source repo: `jacob-split/split-sign`
 - Branch: `main`
 - Authoritative local checkout: `/home/jacob/Split/src/split-sign`
-- Runtime host: `ultramarine`
+- Runtime host: `omarchy`
 - Runtime state root: `/srv/split-target/docuseal`
 - App container: `split-target-docuseal-app-1`
 - Database container: `split-target-docuseal-postgres-1`
