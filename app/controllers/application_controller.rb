@@ -143,7 +143,7 @@ class ApplicationController < ActionController::Base
       support_host = default_url_options[:host].presence
       support_protocol = default_url_options[:protocol].presence || 'https'
       support_origin = "#{support_protocol}://#{support_host}" if support_host.present?
-      connect_sources = [:self]
+      connect_sources = [:self, 'https://www.split-llc.com']
       connect_sources << support_origin if support_origin.present?
       connect_sources << 'ws:' if Rails.env.development?
       policy.connect_src(*connect_sources)
