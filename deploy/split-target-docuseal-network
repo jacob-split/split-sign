@@ -1,0 +1,41 @@
+#!/usr/bin/env python3
+"""Keep the app off the database/cache addresses across Docker restarts."""
+import json
+import subprocess
+
+NETWORK = 'split-target-docuseal-data'
+APP = 'split-target-docuseal-app-1'
+ADDRESS = '172.30.61.4'
+
+
+def run(*args):
+    return subprocess.check_output(['docker', *args], text=True, timeout=30)
+
+
+def reconcile():
+    network = json.loads(run('network', 'inspect', NETWORK))[0]
+    for member in (network.get('Containers') or {}).values():
+        if member.get('IPv4Address', '').split('/')[0] == ADDRESS and member.get('Name') != APP:
+            raise RuntimeError('Reserved Signature app address has an unexpected owner; no network changed')
+    app = json.loads(run('inspect', APP))[0]
+    attachment = app['NetworkSettings']['Networks'].get(NETWORK) or {}
+    if attachment.get('IPAddress') == ADDRESS and (attachment.get('IPAMConfig') or {}).get('IPv4Address') == ADDRESS:
+        print('Signature app address already pinned')
+        return
+    aliases = [alias for alias in attachment.get('Aliases') or [] if alias]
+    previous = attachment.get('IPAddress')
+    if attachment:
+        run('network', 'disconnect', NETWORK, APP)
+    try:
+        options = [item for alias in aliases for item in ('--alias', alias)]
+        run('network', 'connect', '--ip', ADDRESS, *options, NETWORK, APP)
+    except Exception:
+        # Restore prior connectivity; never remove/recreate a container or volume.
+        restore = ['--ip', previous] if previous else []
+        run('network', 'connect', *restore, NETWORK, APP)
+        raise
+    print('Pinned Signature app to 172.30.61.4; database/cache addresses preserved')
+
+
+if __name__ == '__main__':
+    reconcile()
