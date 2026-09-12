@@ -1,7 +1,1 @@
-[mcp]
-remote_mcp_client_enabled = true
-
-[memories]
-generate_memories = true
-no_memories_if_mcp_or_web_search = false
-use_memories = true
+# Repository-specific Cloud settings only. The bootstrap preserves existing global configuration.
