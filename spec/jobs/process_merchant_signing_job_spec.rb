@@ -5,6 +5,27 @@ require 'rails_helper'
 RSpec.describe ProcessMerchantSigningJob do
   subject(:job) { described_class.new }
 
+  it 'records portal signatures without completing the merchant or notifying admins' do
+    completed_at = Time.utc(2026, 9, 24, 6, 48, 21)
+    submitter = instance_double(
+      Submitter,
+      metadata: { 'merchant_id' => 'merchant-abc', 'source' => 'merchant_portal_onboarding' },
+      completed_at:,
+      submission_id: 242
+    )
+    allow(Submitter).to receive(:find).with(242).and_return(submitter)
+
+    expect(ControlPlaneClient).to receive(:update_merchant_document).with(
+      242,
+      { signed_at: completed_at.iso8601, status: 'signed' }
+    )
+    expect(ControlPlaneClient).not_to receive(:fetch_active_merchant_documents)
+    expect(ControlPlaneClient).not_to receive(:update_merchant)
+    expect(MerchantNotificationMailer).not_to receive(:signing_complete)
+
+    job.perform('submitter_id' => 242)
+  end
+
   it 'does not complete an SMS-gated agreement until SMS proof is persisted' do
     document = {
       'status' => 'signed',

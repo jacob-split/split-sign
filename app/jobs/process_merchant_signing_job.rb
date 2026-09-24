@@ -18,6 +18,10 @@ class ProcessMerchantSigningJob
       { signed_at: signed_at.iso8601, status: 'signed' }
     )
 
+    # The merchant portal finalizer owns profile completeness, application status,
+    # and notifications. A signature alone must not advance an incomplete portal profile.
+    return if submitter.metadata&.dig('source') == 'merchant_portal_onboarding'
+
     active_docs = ControlPlaneClient.fetch_active_merchant_documents(merchant_id)
     all_signed = active_docs.present? && active_docs.all? { |doc| completed_document?(doc) }
 
