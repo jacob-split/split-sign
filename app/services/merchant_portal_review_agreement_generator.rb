@@ -13,7 +13,7 @@ module MerchantPortalReviewAgreementGenerator
   GENERATED_SOURCE = 'merchant_portal_agreements'
   PORTAL_ONBOARDING_SOURCE = 'merchant_portal_onboarding'
   EXACT_PORTAL_PACKET_STACK = 'onyx_private_client'
-  PORTAL_MANAGED_STACKS = %w[onyx_private_client default_payroc_tcg epi_cygma_advantage].freeze
+  PORTAL_MANAGED_STACKS = %w[onyx_private_client payzli_private_client default_payroc_tcg epi_cygma_advantage].freeze
   DEFAULT_SORT_OFFSET = 100
   INTERACTIVE_FIELD_TYPES = Set.new(%w[signature initials stamp image file]).freeze
   ALWAYS_BLANK_NORMALIZED = Set.new(%w[
