@@ -319,6 +319,10 @@ module Submitters
     end
 
     def portal_sms_verification_required?(submitter)
+      # Temporarily suspend Telnyx-backed agreement proof for merchant portal
+      # onboarding. Existing proof events remain in the audit trail.
+      return false unless ENV['SPLIT_ONBOARDING_TELNYX_SMS_ENABLED'] == 'true'
+
       metadata = submitter.metadata || {}
 
       return false if metadata['merchant_id'].blank?
