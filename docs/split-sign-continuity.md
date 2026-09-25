@@ -104,23 +104,20 @@ SHA-256-pinned source PDFs. All merchant signatures and initials are typed
 acknowledgements, signing dates are signer-generated date fields, and every
 delivery date remains a blank read-only operational field.
 
-Normally, the initial Onyx and lease packet uses one Telnyx Verify challenge. Split writes
+Normally, the initial private-client packet uses one Telnyx Verify challenge. Split writes
 the same sent, phone-verified, and completed-verification proof into both native
 submission audit trails. Delivery and Acceptance is a later independent signing
 event and therefore carries its own SMS proof. Split Signature rejects final
 completion for every SMS-gated portal submission unless all three provider-backed
 events are already attached to that exact submitter, so a direct signing link
-cannot bypass the portal challenge when SMS is enabled.
+cannot bypass the portal challenge.
 
-As of 2026-09-24, merchant onboarding Telnyx SMS is temporarily suspended
-because the provider account is unavailable. The portal uses its existing
-email-code fallback and allows merchant agreement signing without new SMS
-proof; existing proof events and document metadata remain unchanged. Split
-Signature defaults `SPLIT_ONBOARDING_TELNYX_SMS_ENABLED` to off, including for
-older unsigned portal submissions whose metadata still requests SMS. Restore
-the provider account first, then enable this variable and the website's
-`NEXT_PUBLIC_SPLIT_ONBOARDING_TELNYX_SMS_ENABLED` together and redeploy both
-services to restore the native proof requirement.
+As of 2026-09-25, the temporary Telnyx suspension is retired. Portal agreement
+SMS proof fails closed and is not controlled by a runtime bypass flag. The
+current merchant-facing stacks `onyx_private_client`, `payzli_private_client`,
+`default_payroc_tcg`, and `epi_cygma_advantage` all require provider-backed
+SMS proof. Stack-key enforcement also protects unsigned packets created during
+the outage even when their stored `requires_sms_verification` metadata is false.
 
 Template `128` owns the operator-configured pricing defaults. Portal submission
 generation must copy fields mapped as `constant.template_default`; it must not

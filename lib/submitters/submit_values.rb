@@ -10,7 +10,12 @@ module Submitters
     PORTAL_ACTION_FIELD_TYPES = %w[signature initials].freeze
     PORTAL_SMS_VERIFICATION_ERROR = 'SMS verification is required before signing'
     PORTAL_SMS_VERIFICATION_EVENT_TYPES = %w[send_2fa_sms phone_verified complete_verification].freeze
-    PORTAL_SMS_VERIFICATION_STACKS = %w[onyx_private_client].freeze
+    PORTAL_SMS_VERIFICATION_STACKS = %w[
+      onyx_private_client
+      payzli_private_client
+      default_payroc_tcg
+      epi_cygma_advantage
+    ].freeze
 
     STRFTIME_MAP = {
       'hour' => '%-k',
@@ -319,10 +324,6 @@ module Submitters
     end
 
     def portal_sms_verification_required?(submitter)
-      # Temporarily suspend Telnyx-backed agreement proof for merchant portal
-      # onboarding. Existing proof events remain in the audit trail.
-      return false unless ENV['SPLIT_ONBOARDING_TELNYX_SMS_ENABLED'] == 'true'
-
       metadata = submitter.metadata || {}
 
       return false if metadata['merchant_id'].blank?

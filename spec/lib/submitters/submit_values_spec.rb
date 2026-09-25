@@ -4,13 +4,6 @@ require 'rails_helper'
 
 RSpec.describe Submitters::SubmitValues do
   describe '.validate_portal_sms_verification!' do
-    around do |example|
-      previous = ENV['SPLIT_ONBOARDING_TELNYX_SMS_ENABLED']
-      ENV['SPLIT_ONBOARDING_TELNYX_SMS_ENABLED'] = 'true'
-      example.run
-    ensure
-      ENV['SPLIT_ONBOARDING_TELNYX_SMS_ENABLED'] = previous
-    end
     let(:account) { create(:account) }
     let!(:user) { create(:user, account:) }
     let(:template) { create(:template, account:, author: user) }
@@ -30,15 +23,19 @@ RSpec.describe Submitters::SubmitValues do
       create(:submission_event, submission:, submitter:, event_type:, data:)
     end
 
-    it 'allows existing unsigned portal packets while Telnyx SMS is suspended' do
+    it 'fails closed even if the former Telnyx suspension variable is false' do
       submitter.update!(metadata: {
         'merchant_id' => 'merchant_123',
         'agreement_stack_key' => 'onyx_private_client',
         'requires_sms_verification' => true
       })
 
+      previous = ENV['SPLIT_ONBOARDING_TELNYX_SMS_ENABLED']
       ENV['SPLIT_ONBOARDING_TELNYX_SMS_ENABLED'] = 'false'
-      expect { described_class.validate_portal_sms_verification!(submitter) }.not_to raise_error
+      expect { described_class.validate_portal_sms_verification!(submitter) }
+        .to raise_error(Submitters::SubmitValues::ValidationError)
+    ensure
+      ENV['SPLIT_ONBOARDING_TELNYX_SMS_ENABLED'] = previous
     end
 
     it 'fails closed for the Onyx and Private Client stack without complete proof' do
@@ -97,16 +94,19 @@ RSpec.describe Submitters::SubmitValues do
         .to raise_error(Submitters::SubmitValues::ValidationError)
     end
 
-    it 'does not add an SMS requirement to legacy merchant agreements' do
-      submitter.update!(
-        metadata: {
-          'merchant_id' => 'merchant_123',
-          'agreement_stack_key' => 'payroc_tcg',
-          'requires_sms_verification' => false
-        }
-      )
+    it 'requires SMS proof for every current portal agreement stack' do
+      described_class::PORTAL_SMS_VERIFICATION_STACKS.each do |stack_key|
+        submitter.update!(
+          metadata: {
+            'merchant_id' => 'merchant_123',
+            'agreement_stack_key' => stack_key,
+            'requires_sms_verification' => false
+          }
+        )
 
-      expect { described_class.validate_portal_sms_verification!(submitter) }.not_to raise_error
+        expect { described_class.validate_portal_sms_verification!(submitter) }
+          .to raise_error(Submitters::SubmitValues::ValidationError)
+      end
     end
   end
 
