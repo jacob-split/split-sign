@@ -39,6 +39,11 @@ raise 'LOD master 94 has no fields' if lod_master.fields.blank?
 merchant = ControlPlaneClient.fetch_merchant(merchant_id)
 principal = ControlPlaneClient.fetch_principals(merchant_id)&.first || {}
 MerchantPortalReviewAgreementGenerator.decrypt_records!(merchant, principal)
+require_relative '../lib/funding_packet_layout'
+layout = JSON.parse(File.read(File.join(__dir__, 'funding_signature_layout.json')))
+expected_signature_count = FundingPacketLayout.validate!(layout, frpa_master.fields, merchant['state'])
+
+
 raise "Merchant not found: #{merchant_id}" if merchant.blank?
 
 author = User.find_by(email: ENV['SPLIT_REVIEW_AGREEMENT_AUTHOR_EMAIL'].presence || 'jacob@split-llc.com') || User.order(:id).first
@@ -78,7 +83,7 @@ unless combined
     'frpa_master_template_id' => frpa_master.id,
     'lod_master_template_id' => lod_master.id,
     'deal_key' => deal_key,
-    'funding_field_layout_version' => 8
+    'funding_field_layout_version' => 9
   )
   Templates::CloneAttachments.call(template: combined, original_template: frpa_master)
 
@@ -187,7 +192,7 @@ end
 combined.save!
 
 signature_count = combined.fields.count { |field| field['type'].to_s == 'signature' }
-raise "Combined template expected 7 signatures, found #{signature_count}" unless signature_count == 7
+raise "Combined template expected #{expected_signature_count} signatures, found #{signature_count}" unless signature_count == expected_signature_count
 raise "Combined template expected 2 documents, found #{combined.schema.size}" unless combined.schema.size == 2
 
 submission = combined.submissions.active.includes(:submitters).detect do |candidate|

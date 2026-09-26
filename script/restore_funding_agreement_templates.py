@@ -13,6 +13,7 @@ provided.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import base64
 import json
 import subprocess
@@ -23,6 +24,8 @@ import urllib.request
 import uuid
 from pathlib import Path
 
+
+SIGNATURE_LAYOUT = json.loads(Path(__file__).with_name("funding_signature_layout.json").read_text())
 
 ROLE = "Merchant"
 DEFAULT_API_BASE = "http://127.0.0.1:3000"
@@ -214,13 +217,8 @@ def frpa_fields(submitter_uuid: str, attachment_uuid: str) -> list[dict]:
         text("Owner Email", [(14, 0.510, 0.371, 0.38, 0.016)], font_size=7),
         text("Agreement Date", [(12, 0.130, 0.703, 0.20, 0.016), (13, 0.150, 0.562, 0.20, 0.016), (14, 0.080, 0.101, 0.20, 0.016), (14, 0.365, 0.583, 0.18, 0.016), (14, 0.365, 0.708, 0.18, 0.016)]),
         text("Merchant Signer Name", [(14, 0.075, 0.583, 0.24, 0.016)]),
-        signature("Merchant Signature", [(0, 0.285, 0.837, 0.19, 0.030)]),
-        signature("Guarantor Signature - Agreement", [(0, 0.405, 0.909, 0.19, 0.030)]),
-        signature("Guarantor Signature - Guaranty", [(9, 0.490, 0.478, 0.19, 0.030)]),
-        signature("Merchant Signature - ACH", [(12, 0.240, 0.610, 0.22, 0.035)]),
-        signature("Merchant Signature - Release", [(13, 0.270, 0.366, 0.23, 0.035)]),
-        signature("Guarantor Signature - Service Waiver", [(14, 0.185, 0.741, 0.22, 0.035)]),
-    ]
+
+    ] + [signature(item["name"], [(item["page"], item["rect"][0] / 612, (792 - item["rect"][3]) / 792, (item["rect"][2] - item["rect"][0]) / 612, (item["rect"][3] - item["rect"][1]) / 792)]) for item in SIGNATURE_LAYOUT["fields"]]
 
 
 def lod_fields(submitter_uuid: str, attachment_uuid: str) -> list[dict]:
@@ -237,7 +235,7 @@ def lod_fields(submitter_uuid: str, attachment_uuid: str) -> list[dict]:
         text("Funding Company", [(0, 0.383, 0.316, 0.14, 0.016)], default="Split LLC", font_size=7),
         text("Specified Percentage", [(0, 0.773, 0.334, 0.05, 0.016), (0, 0.258, 0.403, 0.05, 0.016)]),
         text("Title", [(0, 0.595, 0.892, 0.20, 0.016)]),
-        signature("Merchant Signature - Letter of Direction", [(0, 0.580, 0.865, 0.22, 0.035)]),
+        signature("Merchant Signature - Letter of Direction", [(0, 344 / 612, 687 / 792, 116 / 612, 18 / 792)]),
     ]
 
 
@@ -252,6 +250,8 @@ def restore_one(
     fields_builder,
     force: bool,
 ) -> dict:
+    if template_id == 95 and hashlib.sha256(pdf_path.read_bytes()).hexdigest() != SIGNATURE_LAYOUT["sourcePdfSha256"]:
+        raise RuntimeError("FRPA source differs from the reviewed live packet; qualify its field layout before restoration")
     existing = maybe_get_template(token, api_base, template_id)
     if existing is None:
         seed_template_record(container, template_id, name)

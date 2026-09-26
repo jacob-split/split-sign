@@ -1,0 +1,138 @@
+{
+  "templateId": 95,
+  "sourcePdfSha256": "7da43afb720949e5b033ed702decab36790d8e971a4ef4c255b2289e567f9a52",
+  "width": 612,
+  "height": 792,
+  "fields": [
+    {
+      "name": "Merchant Signature",
+      "page": 0,
+      "rect": [
+        96,
+        111,
+        260,
+        122
+      ]
+    },
+    {
+      "name": "Guarantor Signature - Agreement",
+      "page": 0,
+      "rect": [
+        192,
+        48,
+        333,
+        58
+      ]
+    },
+    {
+      "name": "Guarantor Signature - Guaranty",
+      "page": 9,
+      "rect": [
+        230,
+        379,
+        369,
+        397
+      ]
+    },
+    {
+      "name": "Merchant Signature - Fee Appendix",
+      "page": 10,
+      "rect": [
+        110,
+        184,
+        260,
+        202
+      ]
+    },
+    {
+      "name": "Merchant Signature - Bank Verification",
+      "page": 11,
+      "rect": [
+        96,
+        371,
+        260,
+        382
+      ]
+    },
+    {
+      "name": "Merchant Signature - ACH",
+      "page": 12,
+      "rect": [
+        82,
+        285,
+        413,
+        303
+      ]
+    },
+    {
+      "name": "Merchant Signature - Release",
+      "page": 13,
+      "rect": [
+        90,
+        484,
+        410,
+        504
+      ]
+    },
+    {
+      "name": "Merchant Signature - Service Waiver",
+      "page": 14,
+      "rect": [
+        46,
+        319,
+        210,
+        339
+      ]
+    },
+    {
+      "name": "Guarantor Signature - Service Waiver",
+      "page": 14,
+      "rect": [
+        46,
+        221,
+        210,
+        241
+      ]
+    }
+  ],
+  "disclosurePages": [
+    {
+      "states": [
+        "UT",
+        "FL"
+      ],
+      "pages": [
+        16
+      ]
+    },
+    {
+      "states": [
+        "NY",
+        "CA"
+      ],
+      "pages": [
+        17,
+        18
+      ]
+    },
+    {
+      "states": [
+        "VA"
+      ],
+      "pages": [
+        19,
+        20
+      ]
+    },
+    {
+      "states": [
+        "CT"
+      ],
+      "pages": [
+        21,
+        22,
+        23
+      ]
+    }
+  ]
+}
