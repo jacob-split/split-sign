@@ -173,6 +173,9 @@ fallback_values = MerchantPortalReviewAgreementGenerator.hardcoded_lookup(mercha
 interactive_types = MerchantPortalReviewAgreementGenerator::INTERACTIVE_FIELD_TYPES
 
 combined.fields = combined.fields.map do |field|
+  if %w[signature initials].include?(field['type'].to_s)
+    next field.merge('preferences' => (field['preferences'] || {}).merge('format' => 'typed'))
+  end
   next field if interactive_types.include?(field['type'].to_s)
 
   key = MerchantPortalReviewAgreementGenerator.normalize_field_name(field['name'])

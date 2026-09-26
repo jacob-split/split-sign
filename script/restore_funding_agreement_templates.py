@@ -133,6 +133,8 @@ def field(
 ) -> dict:
     interactive = field_type in {"signature", "initials"}
     preferences = {"color": "black"}
+    if interactive:
+        preferences["format"] = "typed"
     if field_type not in {"signature", "initials", "checkbox"}:
         preferences.update({"font": "Helvetica", "font_size": font_size, "align": "left", "valign": "center"})
     item = {
