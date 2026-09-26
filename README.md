@@ -1,3 +1,5 @@
+> **Split deployment:** This fork powers Split Signature. Follow [AGENTS.md](AGENTS.md) and [Split Sign continuity](docs/split-sign-continuity.md) for the catalog-owned source, production containers, and Control Plane writeback. The upstream DocuSeal overview below is not the Split deployment runbook.
+
 <h1 align="center" style="border-bottom: none">
   <div>
     <a href="https://www.docuseal.com">
