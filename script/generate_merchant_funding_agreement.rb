@@ -13,21 +13,22 @@ require 'digest'
 config_path = ARGV.fetch(0) { raise ArgumentError, 'CONFIG.json path is required' }
 config = JSON.parse(File.read(config_path))
 
+require_relative '../lib/funding_deal_terms'
+terms = FundingDealTerms.parse!(config)
 merchant_id = config.fetch('merchant_id')
-purchase_price = BigDecimal(config.fetch('purchase_price').to_s)
-factor_rate = BigDecimal(config.fetch('factor_rate').to_s)
-origination_fee = BigDecimal(config.fetch('origination_fee', 0).to_s)
-specified_percentage = BigDecimal(config.fetch('specified_percentage').to_s)
-agreement_date = Date.iso8601(config.fetch('agreement_date', Date.current.iso8601))
+purchase_price = terms.fetch('purchase_price')
+purchased_amount = terms.fetch('purchased_amount')
+factor_rate = terms.fetch('factor_rate')
+origination_fee = terms.fetch('origination_fee')
+prior_balance = terms.fetch('prior_balance')
+ach_program_fee = terms.fetch('ach_program_fee')
+net_amount = terms.fetch('net_amount_funded')
+specified_percentage = terms.fetch('specified_percentage')
+agreement_date = terms.fetch('agreement_date')
+initial_periodic_amount = terms.fetch('initial_periodic_amount')
+terms_reference = terms.fetch('terms_reference')
 title_override = config['title'].presence
 sort_order = config.fetch('sort_order', 200).to_i
-
-raise ArgumentError, 'purchase_price must be positive' unless purchase_price.positive?
-raise ArgumentError, 'factor_rate must be at least 1.0' unless factor_rate >= 1
-raise ArgumentError, 'origination_fee cannot be negative' if origination_fee.negative?
-unless specified_percentage.positive? && specified_percentage <= 100
-  raise ArgumentError, 'specified_percentage must be between 0 and 100'
-end
 
 frpa_master = Template.active.find_by(id: 95)
 lod_master = Template.active.find_by(id: 94)
@@ -37,14 +38,13 @@ raise 'FRPA master 95 has no fields' if frpa_master.fields.blank?
 raise 'LOD master 94 has no fields' if lod_master.fields.blank?
 
 merchant = ControlPlaneClient.fetch_merchant(merchant_id)
+raise "Merchant not found: #{merchant_id}" if merchant.blank?
 principal = ControlPlaneClient.fetch_principals(merchant_id)&.first || {}
 MerchantPortalReviewAgreementGenerator.decrypt_records!(merchant, principal)
 require_relative '../lib/funding_packet_layout'
 layout = JSON.parse(File.read(File.join(__dir__, 'funding_signature_layout.json')))
 expected_signature_count = FundingPacketLayout.validate!(layout, frpa_master.fields, merchant['state'])
 
-
-raise "Merchant not found: #{merchant_id}" if merchant.blank?
 
 author = User.find_by(email: ENV['SPLIT_REVIEW_AGREEMENT_AUTHOR_EMAIL'].presence || 'jacob@split-llc.com') || User.order(:id).first
 raise 'No Split Signature author is available' unless author
@@ -65,6 +65,11 @@ external_id = "funding_portal_frpa_lod:#{Digest::SHA256.hexdigest(deal_key)[0, 2
 template_name = "#{merchant['business_name']} - FRPA + Payroc Letter of Direction - #{agreement_date.strftime('%m-%d-%Y')}"
 
 combined = Template.active.find_by(external_id: external_id)
+# A submission owns an immutable agreement snapshot. Never rewrite an issued
+# packet while trying to regenerate or change its fees under the same deal key.
+if combined && combined.submissions.exists?
+  raise ArgumentError, 'Existing funding packet has a submission and is preserved; use its existing review link rather than regenerating it'
+end
 created_template = false
 
 unless combined
@@ -83,7 +88,8 @@ unless combined
     'frpa_master_template_id' => frpa_master.id,
     'lod_master_template_id' => lod_master.id,
     'deal_key' => deal_key,
-    'funding_field_layout_version' => 9
+    'funding_field_layout_version' => 9,
+    'funding_terms_reference' => terms_reference
   )
   Templates::CloneAttachments.call(template: combined, original_template: frpa_master)
 
@@ -134,8 +140,6 @@ home_address_full = MerchantPortalReviewAgreementGenerator.join_address(
 )
 title = title_override || principal['title'].presence || 'Owner'
 company_type = merchant['entity_type'].presence || merchant['company_type'].presence || 'LLC'
-purchased_amount = (purchase_price * factor_rate).round(2)
-net_amount = (purchase_price - origination_fee).round(2)
 
 exact_values = {
   'legalname' => merchant['business_name'],
@@ -162,11 +166,11 @@ exact_values = {
   'homeaddress' => home_address_full.presence || principal['street'],
   'agreementdate' => agreement_date.strftime('%m/%d/%Y'),
   'purchaseprice' => format('%.2f', purchase_price),
-  'initialperiodicamount' => 'Variable',
+  'initialperiodicamount' => initial_periodic_amount,
   'purchasedamount' => format('%.2f', purchased_amount),
   'specifiedpercentage' => format('%g', specified_percentage),
-  'priorbalance' => '0.00',
-  'achprogramfee' => '0.00',
+  'priorbalance' => format('%.2f', prior_balance),
+  'achprogramfee' => format('%.2f', ach_program_fee),
   'originationfee' => format('%.2f', origination_fee),
   'netamountfunded' => format('%.2f', net_amount),
   'factorrate' => "Factor Rate: #{format('%g', factor_rate)}",
@@ -217,7 +221,12 @@ unless submission
       'purchased_amount' => purchased_amount.to_s('F'),
       'factor_rate' => factor_rate.to_s('F'),
       'specified_percentage' => specified_percentage.to_s('F'),
-      'origination_fee' => origination_fee.to_s('F')
+      'origination_fee' => origination_fee.to_s('F'),
+      'prior_balance' => prior_balance.to_s('F'),
+      'ach_program_fee' => ach_program_fee.to_s('F'),
+      'net_amount_funded' => net_amount.to_s('F'),
+      'initial_periodic_amount' => initial_periodic_amount,
+      'terms_reference' => terms_reference
     }
   }.with_indifferent_access]
   submission = Submissions.create_from_submitters(
@@ -247,7 +256,12 @@ document = MerchantPortalDocumentSync.sync_submission(
       purchased_amount: purchased_amount.to_s('F'),
       factor_rate: factor_rate.to_s('F'),
       specified_percentage: specified_percentage.to_s('F'),
-      origination_fee: origination_fee.to_s('F')
+      origination_fee: origination_fee.to_s('F'),
+      prior_balance: prior_balance.to_s('F'),
+      ach_program_fee: ach_program_fee.to_s('F'),
+      net_amount_funded: net_amount.to_s('F'),
+      initial_periodic_amount: initial_periodic_amount,
+      terms_reference: terms_reference
     }
   },
   submitter
@@ -274,6 +288,9 @@ puts JSON.pretty_generate(
     specified_percentage: specified_percentage.to_s('F'),
     origination_fee: origination_fee.to_s('F'),
     net_amount_funded: net_amount.to_s('F'),
-    initial_periodic_amount: 'Variable'
+    initial_periodic_amount: initial_periodic_amount,
+    prior_balance: prior_balance.to_s('F'),
+    ach_program_fee: ach_program_fee.to_s('F'),
+    terms_reference: terms_reference
   }
 )
