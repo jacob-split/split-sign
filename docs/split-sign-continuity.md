@@ -10,7 +10,7 @@ This is the current contract for Split Signature / DocuSeal document generation,
 - Runtime host: `omarchy`
 - Runtime state root: `/srv/split-target/docuseal`
 - App container: `split-target-docuseal-app-1`
-- Database container: `split-target-docuseal-postgres-1`
+- Database container: `split-target-docuseal-postgres`
 - Redis container: `split-target-docuseal-redis-1`
 - Production URL: `https://sign.split-llc.com`
 - Current app image source revision is read from OCI label `org.opencontainers.image.revision`; it must match the reviewed application-code commit used for the deployed image. Documentation/operations-only commits may legitimately be newer without forcing an app rebuild.

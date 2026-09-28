@@ -39,4 +39,15 @@ class NetworkTests(unittest.TestCase):
         self.assertEqual(run.call_args.args,('network','connect','--ip','172.30.61.3',network.NETWORK,network.APP))
 
 
+class RuntimeContractTests(unittest.TestCase):
+    def test_documented_database_container_matches_watch_inventory(self):
+        root=pathlib.Path(__file__).resolve().parents[1]
+        container='split-target-docuseal-postgres'
+        watch=(root/'split-watch.yaml').read_text()
+        continuity=(root/'docs'/'split-sign-continuity.md').read_text()
+        self.assertIn(f'id: {container}\n',watch)
+        self.assertIn(f'- Database container: `{container}`',continuity)
+        self.assertNotIn(f'{container}-1',continuity)
+
+
 if __name__=='__main__':unittest.main()
