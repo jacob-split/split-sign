@@ -27,3 +27,9 @@ Current machine-readable discovery surfaces:
 - `/api/agent/openapi.json`
 
 Public agent actions are intentionally blocked for live signing/document mutations until an action has authenticated execution, risk metadata, and proof fields.
+
+## Funding Agreement Preparation
+
+Before preparing or changing a merchant funding agreement, read
+`docs/funding-agreement-operator-guide.md` for Jacob's approved field meanings,
+defaults, preservation rules and state-disclosure review requirements.
