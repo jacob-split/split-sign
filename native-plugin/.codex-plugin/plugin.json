@@ -15,7 +15,7 @@
       "Read",
       "Write"
     ],
-    "brandColor": "#eb7000",
+    "brandColor": "#303030",
     "composerIcon": "./assets/icon.svg",
     "logo": "./assets/icon.svg",
     "defaultPrompt": [
