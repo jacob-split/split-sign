@@ -1,0 +1,25 @@
+{
+  "name": "signature",
+  "version": "1.0.0",
+  "description": "Templates, signing packets and original completed documents.",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Signature",
+    "shortDescription": "Templates, signing packets and original completed documents.",
+    "longDescription": "Templates, signing packets and original completed documents. Uses the existing Split records and authenticated owner services.",
+    "developerName": "Split",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "brandColor": "#eb7000",
+    "composerIcon": "./assets/icon.svg",
+    "logo": "./assets/icon.svg",
+    "defaultPrompt": [
+      "Open Signature."
+    ]
+  }
+}
