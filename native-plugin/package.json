@@ -1,1 +1,9 @@
-{"name":"split-signature-plugin","version":"1.0.0","private":true,"type":"module","scripts":{"test":"node --test test/*.test.mjs"}}
+{
+  "name": "split-signature-plugin",
+  "version": "1.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.mjs"
+  }
+}

@@ -16,7 +16,8 @@
         "ServerAliveCountMax=3",
         "omarchy-codex",
         "node",
-        "/home/jacob/Split/src/split-sign/native-plugin/server.mjs"
+        "/home/jacob/Split/src/split-sign/native-plugin/server.mjs",
+        "--release=1.0.1"
       ],
       "startup_timeout_sec": 30,
       "tool_timeout_sec": 150
