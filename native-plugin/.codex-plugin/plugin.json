@@ -1,9 +1,9 @@
 {
   "name": "signature",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Templates, signing packets and original completed documents.",
   "skills": "./skills/",
-  "mcpServers": "./.mcp.json",
+  "apps": "./.app.json",
   "interface": {
     "displayName": "Signature",
     "shortDescription": "Templates, signing packets and original completed documents.",

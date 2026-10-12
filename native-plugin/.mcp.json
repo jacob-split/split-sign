@@ -1,26 +1,3 @@
 {
-  "mcpServers": {
-    "signature": {
-      "title": "Signature",
-      "description": "Templates, signing packets and original completed documents.",
-      "command": "/usr/bin/ssh",
-      "args": [
-        "-T",
-        "-o",
-        "BatchMode=yes",
-        "-o",
-        "ConnectTimeout=8",
-        "-o",
-        "ServerAliveInterval=30",
-        "-o",
-        "ServerAliveCountMax=3",
-        "omarchy-codex",
-        "node",
-        "/home/jacob/Split/src/split-sign/native-plugin/server.mjs",
-        "--release=1.0.3"
-      ],
-      "startup_timeout_sec": 30,
-      "tool_timeout_sec": 150
-    }
-  }
+  "mcpServers": {}
 }
