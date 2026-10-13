@@ -14,6 +14,20 @@ describe 'Submission API' do
   end
 
   describe 'GET /api/submissions' do
+    it 'finds packets by template name while preserving account scope' do
+      templates[0].update!(name: 'Cobalt Merchant Agreement')
+      matched = create(:submission, :with_submitters, template: templates[0], created_by_user: author)
+      create(:submission, :with_submitters, template: templates[1], created_by_user: author)
+      testing_templates[0].update!(name: 'Cobalt Merchant Agreement')
+      create(:submission, :with_submitters, template: testing_templates[0], created_by_user: testing_author)
+
+      get '/api/submissions', params: { q: 'Cobalt Merchant' },
+                             headers: { 'x-auth-token': author.access_token.token }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.parsed_body['data'].map { |packet| packet['id'] }).to eq([matched.id])
+    end
+
     it 'returns a list of submissions' do
       submissions = [
         create(:submission, :with_submitters,
@@ -29,6 +43,7 @@ describe 'Submission API' do
       expect(response).to have_http_status(:ok)
       expect(response.parsed_body['pagination']).to eq(JSON.parse({
         count: submissions.size,
+        has_more: false,
         next: submissions.last.id,
         prev: submissions.first.id
       }.to_json))

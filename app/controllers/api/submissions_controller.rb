@@ -10,7 +10,7 @@ module Api
     end
 
     def index
-      submissions = Submissions.search(current_user, @submissions, params[:q])
+      submissions = Submissions.search(current_user, @submissions, params[:q], search_template: true)
       submissions = filter_submissions(submissions, params)
 
       submissions = paginate(submissions.preload(:created_by_user, :submitters,
@@ -27,6 +27,7 @@ module Api
         end,
         pagination: {
           count: submissions.size,
+          has_more: submissions.any? && submissions.where(id: ...submissions.last.id).exists?,
           next: submissions.last&.id,
           prev: submissions.first&.id
         }
