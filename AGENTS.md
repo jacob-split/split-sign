@@ -16,6 +16,8 @@ This repository contains Split signing/document workflow code. Treat document ge
 
 Inspect existing Rails conventions before editing, run focused tests for touched code, and verify production-bound behavior against the actual runtime path named by Jacob. Do not mutate merchant/customer state or send live document workflows unless Jacob explicitly approves live execution in the active thread.
 
+For Docker-backed request specs, use `python3 script/isolated_agent_request_test.py [spec ...]` (`--smoke` verifies only the isolated database and lifecycle). It creates labelled, unique fixtures with temporary database storage, preserves the spec result, and tears down only captured IDs. Do not recreate the unlabelled `agent-stack-sign-test-*` harness or force-remove production-named containers. Watch excludes only the exact fixture namespace plus both ownership labels; unlabelled crashes remain monitored.
+
 Before changing merchant portal document sync, Control Plane `merchant_documents` writeback, signed-document completion state, review-agreement generation, or Split Signature agent discovery, read `docs/split-sign-continuity.md`.
 
 Current machine-readable discovery surfaces:
