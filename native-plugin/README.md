@@ -9,3 +9,5 @@ Run `node --test native-plugin/test/*.test.mjs` from this repository for API pro
 The wrapper serves the shared renderer's `dist/signature.html` directly from
 `SPLIT_WEBSITE_PLUGIN_ROOT` (defaulting to the canonical website workspace).
 Its historical local `dist/signature.html` copy is not authoritative. Rebuild
+the shared renderer with `npm run build` in that workspace, then run
+`node scripts/package-plugins.mjs` to regenerate the native packages.
