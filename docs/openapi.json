@@ -1314,7 +1314,8 @@
                           "name": {
                             "type": "string",
                             "description": "Name of the document submission",
-                            "example": "Test Submission Document"
+                            "example": "Test Submission Document",
+                            "nullable": true
                           },
                           "source": {
                             "type": "string",
@@ -2327,7 +2328,8 @@
                     "name": {
                       "type": "string",
                       "description": "Name of the document submission",
-                      "example": "Test Submission Document"
+                      "example": "Test Submission Document",
+                      "nullable": true
                     },
                     "slug": {
                       "type": "string",
@@ -3807,7 +3809,8 @@
                     },
                     "name": {
                       "type": "string",
-                      "description": "Submission name."
+                      "description": "Submission name.",
+                      "nullable": true
                     },
                     "submitters": {
                       "type": "array",
@@ -4720,7 +4723,8 @@
                     },
                     "name": {
                       "type": "string",
-                      "description": "Submission name."
+                      "description": "Submission name.",
+                      "nullable": true
                     },
                     "submitters": {
                       "type": "array",
@@ -5648,7 +5652,8 @@
                     },
                     "name": {
                       "type": "string",
-                      "description": "Submission name."
+                      "description": "Submission name.",
+                      "nullable": true
                     },
                     "submitters": {
                       "type": "array",

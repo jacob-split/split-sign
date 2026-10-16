@@ -3,7 +3,7 @@
 module SplitAgentContract
   module_function
 
-  VERSION = '2026-08-17'
+  VERSION = '2026-10-16'
 
   def contract
     {
@@ -25,6 +25,9 @@ module SplitAgentContract
         },
         docs: ['AGENTS.md', 'docs/split-sign-continuity.md']
       },
+      sdk: { package: '@split/sdk', namespace: 'signature', source: 'signature-api',
+             openapi: '/api/agent/openapi.json', authentication: 'Existing X-Auth-Token account binding',
+             retry: 'never', native_api: '/docs/api' },
       capabilities: capabilities,
       readiness: readiness,
       actions: actions,
@@ -138,7 +141,7 @@ module SplitAgentContract
     }
   end
 
-  def openapi
+  def discovery_openapi
     {
       openapi: '3.1.0',
       info: {
@@ -148,18 +151,23 @@ module SplitAgentContract
       paths: {
         '/api/agent/capabilities' => {
           get: {
+            operationId: 'inspectSigningContract',
             summary: 'Read the Split Signature agent contract',
             responses: { '200' => { description: 'Agent contract' } }
           }
         },
         '/api/agent/readiness.json' => {
           get: {
+            operationId: 'inspectSigningReadiness',
             summary: 'Read the Split Signature readiness report',
             responses: { '200' => { description: 'Readiness report' } }
           }
         },
         '/api/agent/actions/{action_id}/invoke' => {
           post: {
+            operationId: 'invokeLegacyPublicAction',
+            'x-split-enabled': false,
+            parameters: [{ name: 'action_id', in: 'path', required: true, schema: { type: 'string' } }],
             summary: 'Invoke a proof-gated signing action when implemented',
             responses: {
               '403' => { description: 'Action is not callable through this public surface' },
@@ -170,4 +178,11 @@ module SplitAgentContract
       }
     }
   end
+  def openapi
+    require 'json'
+    native = JSON.parse(File.read(File.expand_path('../contracts/hq-api.openapi.json', __dir__)))
+    discovery = JSON.parse(JSON.generate(discovery_openapi))
+    native.merge('paths' => native.fetch('paths').merge(discovery.fetch('paths')))
+  end
+
 end
