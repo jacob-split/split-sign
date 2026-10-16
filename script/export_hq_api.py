@@ -3,7 +3,6 @@
 import copy,hashlib,json,pathlib,sys
 root=pathlib.Path(__file__).resolve().parents[1]
 doc=json.loads((root/'docs/openapi.json').read_text())
-doc['openapi']='3.1.0'
 doc['info']['title']='Split Signature complete owner API'
 doc['servers']=[{'url':'https://sign.split-llc.com'}]
 doc['paths']={'/api'+p:copy.deepcopy(v) for p,v in doc['paths'].items()}
@@ -19,8 +18,8 @@ extras=[
  ('get','/api/templates/{template_id}/submissions','getTemplateSubmissions',None),
  ('post','/api/templates/{template_id}/submissions','createTemplateSubmission',None),
  ('post','/api/templates/doc','createTemplateFromDoc',None),
- ('post','/api/tools/merge','mergePdfFiles',obj({'files':{'type':'array','minItems':2,'items':{'type':'string', 'contentEncoding':'base64'}}},['files'])),
- ('post','/api/tools/verify','verifyPdfSignature',obj({'file':{'type':'string','contentEncoding':'base64'}},['file'])),
+ ('post','/api/tools/merge','mergePdfFiles',obj({'files':{'type':'array','minItems':2,'items':{'type':'string', 'format':'byte'}}},['files'])),
+ ('post','/api/tools/verify','verifyPdfSignature',obj({'file':{'type':'string','format':'byte'}},['file'])),
  ('get','/api/events/form/{type}','getFormEvents',None),
  ('get','/api/events/submission/{type}','getSubmissionEvents',None),
 ]

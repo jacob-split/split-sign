@@ -2,6 +2,7 @@
 require 'json'
 require_relative '../lib/split_agent_contract'
 doc = SplitAgentContract.openapi
+raise 'Native OpenAPI dialect changed' unless doc['openapi'] == '3.0.0'
 operations = doc.fetch('paths').flat_map { |path, item| item.filter_map { |method, op| [path, method, op] if %w[get post put patch delete].include?(method) } }
 native = operations.select { |path, _, _| !path.start_with?('/api/agent/') }
 raise 'Missing native API routes' unless native.length == 36
