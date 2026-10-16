@@ -10,4 +10,5 @@ raise 'Duplicate operation IDs' unless native.map { |_, _, op| op['operationId']
 raise 'SDK discovery missing' unless SplitAgentContract.contract[:sdk][:namespace] == 'signature'
 raise 'Public legacy writes enabled' if SplitAgentContract.actions.any? { |action| action[:callable] }
 raise 'Submission name contract' unless doc.dig('paths', '/api/submissions', 'get', 'responses', '200', 'content', 'application/json', 'schema', 'properties', 'data', 'items', 'properties', 'name', 'nullable')
+raise 'Optional metadata incorrectly required' if doc.dig('paths', '/api/submissions/{id}', 'get', 'responses', '200', 'content', 'application/json', 'schema', 'required').include?('metadata')
 puts JSON.generate(passed: true, native_operations: native.length, public_legacy_mutations: false)

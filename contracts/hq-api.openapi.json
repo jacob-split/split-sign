@@ -2393,7 +2393,6 @@
                     "submission_events",
                     "documents",
                     "status",
-                    "metadata",
                     "completed_at"
                   ],
                   "properties": {
@@ -11634,11 +11633,19 @@
     },
     {
       "path": "docs/openapi.json",
-      "sha256": "968d38a04a3c4c8d3b6bcba8aa846f52867ee3449f51b90378e9522ad6eadb89"
+      "sha256": "519b1298967a63b61a944fb05e24c981d057d1544a2c479b3c5f2609ed7abd67"
     },
     {
       "path": "lib/split_agent_contract.rb",
       "sha256": "a57e9f9369227d11ac06a4fff45b4ac51ab8ddd081243b7119f7c5ea5e6c2fe8"
+    },
+    {
+      "path": "lib/submissions/serialize_for_api.rb",
+      "sha256": "802f65f27d871f11bb374dee7e707a56ae5caaf8f2b6a97c2a1f8afdd459f259"
+    },
+    {
+      "path": "lib/submitters/serialize_for_api.rb",
+      "sha256": "d491489591ae8d3743a877a37d3c9211ba3b6b88f6ea78311ca769dc60281598"
     },
     {
       "path": "app/controllers/api/active_storage_blobs_proxy_controller.rb",
