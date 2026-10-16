@@ -11637,7 +11637,7 @@
     },
     {
       "path": "lib/split_agent_contract.rb",
-      "sha256": "a57e9f9369227d11ac06a4fff45b4ac51ab8ddd081243b7119f7c5ea5e6c2fe8"
+      "sha256": "098696e03da19177952583b8d75077563e3ae72252e76480c7b36333c2a60663"
     },
     {
       "path": "lib/submissions/serialize_for_api.rb",
@@ -11718,7 +11718,7 @@
   ],
   "x-split-sdk": {
     "package": "@split/sdk",
-    "namespace": "signature",
+    "namespace": "sign",
     "transport": "existing authenticated owner HTTP API",
     "retry": "never",
     "coverage": "36 distinct method/path operations; source-backed schemas from native API docs plus routed owner extensions. Unknown extension fields remain owner-validated."

@@ -25,7 +25,7 @@ module SplitAgentContract
         },
         docs: ['AGENTS.md', 'docs/split-sign-continuity.md']
       },
-      sdk: { package: '@split/sdk', namespace: 'signature', source: 'signature-api',
+      sdk: { package: '@split/sdk', namespace: 'sign', source: 'sign',
              openapi: '/api/agent/openapi.json', authentication: 'Existing X-Auth-Token account binding',
              retry: 'never', native_api: '/docs/api' },
       capabilities: capabilities,

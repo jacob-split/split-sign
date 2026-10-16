@@ -3,7 +3,7 @@
 The native API is exported from `docs/openapi.json`, all routed API extensions,
 and the current controller/source fingerprints into
 `contracts/hq-api.openapi.json`. This is the source consumed by the global
-`@split/sdk` `signature` namespace, shared JavaScript/Python/CLI/MCP clients,
+`@split/sdk` `sign` namespace, shared JavaScript/Python/CLI/MCP clients,
 and `/api/agent/openapi.json`. Existing `X-Auth-Token`, account authorization,
 object ownership, and signing/SMS evidence rules remain authoritative.
 

@@ -45,7 +45,7 @@ for path,item in doc['paths'].items():
 # Explicit API routes are part of the reviewed contract; route changes force regeneration.
 sources=[root/'config/routes.rb',root/'docs/openapi.json',root/'lib/split_agent_contract.rb',root/'lib/submissions/serialize_for_api.rb',root/'lib/submitters/serialize_for_api.rb',*sorted((root/'app/controllers/api').glob('*.rb'))]
 doc['x-split-owner-sources']=[{'path':str(p.relative_to(root)),'sha256':hashlib.sha256(p.read_bytes()).hexdigest()} for p in sources]
-doc['x-split-sdk']={'package':'@split/sdk','namespace':'signature','transport':'existing authenticated owner HTTP API','retry':'never','coverage':'36 distinct method/path operations; source-backed schemas from native API docs plus routed owner extensions. Unknown extension fields remain owner-validated.'}
+doc['x-split-sdk']={'package':'@split/sdk','namespace':'sign','transport':'existing authenticated owner HTTP API','retry':'never','coverage':'36 distinct method/path operations; source-backed schemas from native API docs plus routed owner extensions. Unknown extension fields remain owner-validated.'}
 text=json.dumps(doc,indent=2)+'\n'
 out=root/'contracts/hq-api.openapi.json'
 if '--check' in sys.argv:
