@@ -6,7 +6,7 @@ Select skills for the actual workflow. Load the relevant entrypoint and only the
 
 Surface Linux is the primary local development and execution environment for this repository. The authoritative local checkout is `/home/jacob/Split/src/split-sign`; do not redirect normal work to retired Gizmo/Ubuntu paths or stale macOS checkouts. The Mac remains an Apple-specific/user-facing peer when a task genuinely requires macOS.
 
-Current conversation and live source/runtime state are authoritative. For substantive work, use GEE `continuity_start` with catalog project `split-sign`; use GEE native Continuity for current durable work, and use Deja only as historical evidence. Use Macro for stored operational-source retrieval and read originating services directly for current facts. Do not recreate GBrain or another retired duplicate memory/indexing layer. In Codex Cloud, run `bash .codex/cloud-setup.sh` when expected local config or skills are missing.
+Current conversation and live source/runtime state are authoritative. For substantive work, use GEE `continuity_start` with catalog project `split-sign`; use GEE native Continuity for current durable work, and use Deja only as historical evidence. Use the current Messages, Insight, Portal, and Signature sources for operational retrieval. Use retained Macro APIs only when the current workflow explicitly requires them or as historical evidence; read originating services directly for current facts. Do not recreate GBrain or another retired duplicate memory/indexing layer. In Codex Cloud, run `bash .codex/cloud-setup.sh` when expected local config or skills are missing.
 
 Cloud setup installs a deliberate Cloud policy while keeping repository instructions and skills at repository scope. It validates and preserves unrelated configuration, authentication and model choices; it does not copy a live runtime home or establish new private-network membership.
 
@@ -35,3 +35,4 @@ Public agent actions are intentionally blocked for live signing/document mutatio
 Before preparing or changing a merchant funding agreement, read
 `docs/funding-agreement-operator-guide.md` for Jacob's approved field meanings,
 defaults, preservation rules and state-disclosure review requirements.
+

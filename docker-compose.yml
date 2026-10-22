@@ -1,3 +1,7 @@
+# Upstream DocuSeal example only; not the Split production deployment manifest.
+# Split uses the catalog-owned, reviewed commit-pinned split-target runtime.
+# See AGENTS.md and docs/split-sign-continuity.md; do not deploy this example
+# over production or replace its database/Redis/volumes for an app-only release.
 services:
   app:
     depends_on:
@@ -37,3 +41,4 @@ services:
       - ./caddy:/data/caddy
     environment:
       - HOST=${HOST}
+
