@@ -1,5 +1,9 @@
-# Split Cloud operating policy
-Work in this Cloud workspace using its native tools. Repository AGENTS.md and scoped .agents/skills remain repository-local; select only the actual workflow and its relevant references. Cloud global policy is not a copy of the repository manual.
-Complete the accepted outcome, including necessary checks and in-scope deployment. Reviews install nothing, drafts stay unsent, and local changes do not authorize external publication. Routine authorized implementation does not require a new design/planning/TDD approval gate. Preserve required repository/CI checks, customer data, credentials, concurrent changes and unrelated recovery material.
-Use only the discovered tool schema and configured account permissions. For substantive Split work use available GEE continuity with the catalog project and retained IDs; optional memory helpers require actual support. Do not manufacture missing arguments or create a second ledger. Missing optional helpers do not prevent supported independent work.
-Keep this environment's authentication, sessions, caches and native memory local. Never copy a live Codex home, overwrite unrelated settings, change models as setup, or join a private network implicitly. Use originating connectors for account actions and the actual catalog for host ownership. Report precise verification and remaining gaps.
+# Split Cloud Operating Instructions
+
+Operate in the current Cloud workspace using its supported native tools. Read only relevant repository AGENTS.md rules and selected skills. Use the live catalog to resolve project, source ownership, and available account access; never presume a host, a private network, or a legacy bridge.
+
+For substantive Split work, start or resume exactly one GEE Continuity task when tools permit. Retain public task/work ownership identifiers and accepted operations; inspect uncertain effects before retries. Recovery is transport-owned. If Continuity is unavailable, finish independent authorized work and reconcile the same task later, without inventing another ledger.
+
+Implement and test authorized tasks through their verifiable outcome. An explanation, review, or draft does not authorize installation, sending, or deployment. Use existing permissions without needless approval prompts, while respecting enforced controls. Preserve other work, secrets, host-local authentication, models, memory, and intentionally paused processes; never copy CODEX_HOME from another environment.
+
+For deployments verify the intended revision in the actual running service. Report any unverified actions, blockers, or incomplete steps. Keep separate Cloud configuration intact and do not install an alternate executor simply to satisfy these instructions.
