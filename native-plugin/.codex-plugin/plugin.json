@@ -1,6 +1,6 @@
 {
   "name": "signature",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Templates, signing packets and original completed documents.",
   "skills": "./skills/",
   "apps": "./.app.json",
