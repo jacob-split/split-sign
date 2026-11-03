@@ -54,21 +54,42 @@ def main():
                               'database': 'SELECT 1', 'labels': LABELS}))
             return 0
         image = docker('inspect', '--format', '{{.Image}}', 'split-target-docuseal-app-1')
+        # Production images may retain deployment environment defaults. Only
+        # language/runtime variables may cross into the disposable fixture.
+        image_env = json.loads(docker('image', 'inspect', '--format', '{{json .Config.Env}}', image))
+        runtime_keys = {'PATH', 'LANG', 'GEM_HOME', 'LD_PRELOAD', 'OPENSSL_CONF', 'HOME', 'WORKDIR'}
+        cleared_env = [arg for entry in image_env
+                       if entry.split('=', 1)[0] not in runtime_keys
+                       and not entry.startswith(('RUBY_', 'BUNDLE_'))
+                       for arg in ('-e', entry.split('=', 1)[0]+'=')]
+        redis_image = docker('inspect', '--format', '{{.Image}}', 'split-target-docuseal-redis-1')
+        redis = docker('create', '--name', name+'-redis', *labels, '--network', network,
+                       '--network-alias', 'test-redis', '--memory', '128m', '--cpus', '.25',
+                       redis_image, 'redis-server', '--save', '', '--appendonly', 'no')
+        owned.append(redis)
+        docker('start', redis)
         script = '''set -eu
 cd /app
 apk add --no-cache build-base git yaml-dev
 cp -a /source/app /source/lib /source/spec /app/
 cp /source/.rspec /app/.rspec
+# Production images omit the generated schema.rb; use the tracked PostgreSQL schema.
+cp /source/db/schema.rb.pg /app/db/schema.rb
 bundle config unset without
 bundle install --jobs 1 --retry 1
 bundle exec rails db:schema:load
 exec bundle exec rspec "$@"
 '''
         app = docker('create', '--name', name+'-app', *labels, '--network', network,
-                     '--memory', '1536m', '--cpus', '1', '--user', 'root',
+                     '--memory', '1536m', '--cpus', '1', '--user', 'root', *cleared_env,
                      '-e', 'RAILS_ENV=test', '-e', 'BUNDLE_WITHOUT=development',
                      '-e', 'DATABASE_URL=postgresql://fixture:fixture@test-db/fixture',
                      '-e', 'SECRET_KEY_BASE=isolated-fixture-only',
+                     '-e', 'REDIS_URL=redis://test-redis:6379/0',
+                     '-e', 'HOST=example.com', '-e', 'APP_URL=http://example.com',
+                     '-e', 'FORCE_SSL=false',
+                     '-e', 'CONTROL_PLANE_URL=http://control.invalid',
+                     '-e', 'CONTROL_PLANE_SERVICE_TOKEN=isolated-fixture-only',
                      '-v', str(root)+':/source:ro', '--entrypoint', 'sh', image,
                      '-c', script, 'request-specs', *args.specs)
         owned.append(app)
