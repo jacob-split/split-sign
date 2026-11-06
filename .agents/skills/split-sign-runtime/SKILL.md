@@ -9,4 +9,4 @@ This repo contains Split signing and document workflow code. Inspect existing Ra
 
 Treat signing links, generated documents, webhooks, and merchant/customer data as production-sensitive. Do not send live signing workflows or mutate merchant/customer state unless Jacob explicitly approves live execution in the active thread.
 
-Use current project context and native Codex memory for prior Split signing decisions and cross-session context. Use Macro when broader stored operational-source retrieval is needed; read originating services for current facts.
+Use GEE native Continuity for current task context and Deja only for historical evidence. Use current Messages, Insight, Portal and Signature sources for operational retrieval; read originating services for current facts. Use a legacy interface only when the verified workflow requires its compatibility data.
