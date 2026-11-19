@@ -112,7 +112,7 @@ class SubmitFormController < ApplicationController
   def trusted_portal_signing_origin?
     allowed_origins = ENV.fetch(
       'PORTAL_SIGNING_ORIGINS',
-      'https://www.split-llc.com,https://split-llc.com,https://www.ccsplit.org,https://ccsplit.org'
+      'https://www.split-llc.com,https://split-llc.com'
     ).split(',').map(&:strip).reject(&:blank?)
 
     candidate_origins = [request.origin.to_s]
